@@ -15,4 +15,4 @@ The block sketch remains [mint-path.svg](mint-path.svg). Each block now has its 
 | [07-radio.svg](07-radio.svg) | Slept 2.4 GHz radio, pi match, antenna | 1 mJ per posting. Radio holds no key. |
 | [08-burden-chart.svg](08-burden-chart.svg) | Average draw against the 2 W cap | Continuous sum about 0.5 W. |
 
-Equations for the supply current and the divider ratio are on those sheets and in [meter-burden.md](../meter-burden.md).
+Cryptography and ledger update, opened to registers and gates: [crypto-datapath.md](crypto-datapath.md).

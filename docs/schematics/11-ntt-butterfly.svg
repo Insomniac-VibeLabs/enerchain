@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560">
+  <rect width="1100" height="560" fill="#f7f4ee"/>
+  <text x="24" y="28" font-family="ui-sans-serif,sans-serif" font-size="16">11 — NTT butterfly, the polynomial datapath</text>
+  <text x="24" y="48" font-size="12" fill="#444">ML-DSA multiplies polynomials in the NTT domain. q_mod = 8380417. doc-0.8</text>
+  <text x="80" y="100" font-size="12">a</text>
+  <line x1="100" y1="96" x2="200" y2="96" stroke="#111"/>
+  <text x="80" y="160" font-size="12">b</text>
+  <line x1="100" y1="156" x2="200" y2="156" stroke="#111"/>
+  <rect x="200" y="130" width="80" height="50" fill="none" stroke="#111"/><text x="214" y="160" font-size="12">× ζ</text>
+  <text x="200" y="196" font-size="10">twiddle ROM</text>
+  <line x1="280" y1="156" x2="360" y2="156" stroke="#111"/>
+  <rect x="360" y="70" width="70" height="40" fill="none" stroke="#111"/><text x="378" y="94" font-size="14">+</text>
+  <rect x="360" y="140" width="70" height="40" fill="none" stroke="#111"/><text x="378" y="164" font-size="14">−</text>
+  <line x1="180" y1="96" x2="180" y2="90" stroke="#111"/>
+  <line x1="180" y1="90" x2="360" y2="90" stroke="#111"/>
+  <line x1="430" y1="90" x2="520" y2="90" stroke="#111"/>
+  <line x1="430" y1="160" x2="520" y2="160" stroke="#111"/>
+  <rect x="520" y="70" width="120" height="40" fill="none" stroke="#111"/><text x="536" y="94" font-size="12">mod q_mod</text>
+  <rect x="520" y="140" width="120" height="40" fill="none" stroke="#111"/><text x="536" y="164" font-size="12">mod q_mod</text>
+  <line x1="640" y1="90" x2="740" y2="90" stroke="#111"/><text x="748" y="94" font-size="12">a'</text>
+  <line x1="640" y1="160" x2="740" y2="160" stroke="#111"/><text x="748" y="164" font-size="12">b'</text>
+  <text x="24" y="250" font-size="13">a' = (a + ζb) mod 8380417. b' = (a − ζb) mod 8380417. ζ comes from a round ROM, not from firmware.</text>
+  <text x="24" y="272" font-size="13">The multiplier is a 23-bit modular multiply. Barrett reduction is a fixed shift-and-subtract, wired, not coded.</text>
+  <text x="24" y="294" font-size="13">Sign uses this butterfly for w = Ay and for c·s1. s1 is the provisioned secret; the butterfly has no path that exports it.</text>
+  <text x="24" y="340" font-size="13">Rejection is a comparator on the coefficients of z against the FIPS 204 bound. Fail pulses the sampler again. Pass loads σ.</text>
+  <text x="24" y="400" font-size="12" fill="#444">Module-lattice sign, FIPS 204. Butterfly is the arithmetic circuit. Keccak sheet 10 feeds it seeds and the challenge.</text>
+</svg>
