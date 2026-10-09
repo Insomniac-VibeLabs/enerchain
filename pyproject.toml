@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enerchain"
+version = "0.0.1"
+description = "Enerchain reference software: meter record, EC-MINT1 model, ML-DSA ledger, wallet, devnet"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = ["dilithium-py==1.4.0"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+enerchain = "enerchain.cli:main"
+
+[tool.setuptools]
+packages = ["enerchain"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
