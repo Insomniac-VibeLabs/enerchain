@@ -138,3 +138,22 @@ def test_energy_meter_counts_watt_hours():
     assert em.mint.e_exp == 3600 and em.mint.tokens == 3
     em.step(0.0, 1800.0, 3600)
     assert em.mint.e_imp == 1800
+
+
+def test_as_built_meter_signs_every_kwh():
+    # Default constants are the as-built ones: q = 1000 Wh, a record per token.
+    from enerchain.meter import Q_WH, SIGN_EVERY, EnergyMeter
+    assert (Q_WH, SIGN_EVERY) == (1000, 1)
+    em = EnergyMeter(9, ROLE_GRID)
+    em.step(1000.0, 0.0, 3599)          # 999.7 Wh: nothing yet
+    assert em.take_records() == []
+    em.step(1000.0, 0.0, 1)             # the 1000th Wh: one token, one record
+    r = em.take_records()
+    assert [x.parsed.tokens for x in r] == [1]
+    em.step(2500.0, 0.0, 3600)          # 2.5 kWh more: tokens 2 and 3
+    r = em.take_records()
+    assert [x.parsed.tokens for x in r] == [2, 3]
+    assert [x.parsed.seq for x in r] == [2, 3]
+    for x in r:                          # a record is built as its token mints
+        p = x.parsed
+        assert p.e_exp - p.e_imp == p.tokens * 1000

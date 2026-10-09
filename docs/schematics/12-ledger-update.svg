@@ -2,24 +2,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620">
   <rect width="1100" height="620" fill="#f7f4ee"/>
   <text x="24" y="28" font-family="ui-sans-serif,sans-serif" font-size="16">12 — Ledger update, no difficulty</text>
-  <text x="24" y="48" font-size="12" fill="#444">A node checks the signature and extends the hash chain. It does not mint. doc-0.8</text>
+  <text x="24" y="48" font-size="12" fill="#444">A node checks the signature and extends the hash chain. It credits only what the meters signed. doc-1.3</text>
   <rect x="40" y="80" width="140" height="40" fill="none" stroke="#111"/><text x="70" y="104" font-size="12">radio in</text>
   <line x1="180" y1="100" x2="230" y2="100" stroke="#111"/>
   <rect x="230" y="78" width="160" height="44" fill="none" stroke="#111"/><text x="250" y="104" font-size="12">frame check</text>
   <line x1="390" y1="100" x2="440" y2="100" stroke="#111"/>
   <rect x="440" y="70" width="200" height="60" fill="none" stroke="#111"/><text x="456" y="94" font-size="12">ML-DSA-44 verify</text><text x="456" y="114" font-size="11">same NTT + Keccak</text>
   <line x1="640" y1="100" x2="700" y2="100" stroke="#111"/>
-  <rect x="700" y="78" width="150" height="44" fill="none" stroke="#111"/><text x="716" y="104" font-size="12">W chain CMP</text>
+  <rect x="700" y="78" width="150" height="44" fill="none" stroke="#111"/><text x="712" y="104" font-size="12">counter CMP</text>
   <line x1="775" y1="122" x2="775" y2="180" stroke="#111"/>
-  <rect x="640" y="180" width="280" height="50" fill="none" stroke="#111"/><text x="656" y="210" font-size="12">accept only if W = W_prev + w</text>
+  <rect x="640" y="180" width="280" height="50" fill="none" stroke="#111"/><text x="652" y="202" font-size="11">accept if seq &gt; last and E_x, E_m, T ≥ last</text><text x="652" y="220" font-size="11">credit min(T_GEN, T_GRID) − already credited</text>
   <rect x="40" y="270" width="500" height="80" fill="none" stroke="#111"/>
   <text x="56" y="298" font-size="12">hash register H</text>
   <text x="56" y="322" font-size="12">H_k = SHA-384( H_{k-1} ‖ body_k )</text>
   <line x1="540" y1="310" x2="620" y2="310" stroke="#111"/>
   <rect x="620" y="284" width="200" height="52" fill="none" stroke="#111"/><text x="648" y="314" font-size="12">SHA-384 core</text>
-  <text x="24" y="400" font-size="13">SHA-384 is a wired compression function, 64 rounds of addition and bitwise majority/choice. No target, no retarget.</text>
+  <text x="24" y="400" font-size="13">SHA-384 is a wired compression function, 80 rounds of 64-bit addition and bitwise majority/choice (the SHA-512 core). No target, no retarget.</text>
   <text x="24" y="422" font-size="13">Body is the accepted (m, σ) list, capped at 2^20 bytes. Extra records wait. The cap is a comparator, not a parameter that grows.</text>
   <text x="24" y="444" font-size="13">Verify failure drops the frame. It does not change q and it does not burn a hash search.</text>
-  <text x="24" y="490" font-size="13">Node supply is separate from the meter. A few hundred verifies are under 1 J. Sheet 08.</text>
-  <text x="24" y="540" font-size="12" fill="#444">Ledger update is verify plus one hash-chain step. Issuance already happened in the element.</text>
+  <text x="24" y="490" font-size="13">Node supply is separate from the meter. A few hundred verifies are under 1 J (docs/meter-burden.md).</text>
+  <text x="24" y="540" font-size="12" fill="#444">Ledger update is verify plus one hash-chain step. The token count was fixed in the meters; the node takes the pair minimum.</text>
 </svg>

@@ -1,6 +1,6 @@
 # EC-MINT1 specification
 
-Edition: v0.0.1 (doc-1.2). The pin table is [PINOUT.md](PINOUT.md). This file is the electrical and logical contract around that table. The private ML-DSA key is not in this die; it stays in the QS7001.
+Edition: v0.0.1 (doc-1.3). The pin table is [PINOUT.md](PINOUT.md). This file is the electrical and logical contract around that table. The private ML-DSA key is not in this die; it stays in the QS7001.
 
 ## Rails
 
@@ -20,7 +20,7 @@ Two pulse inputs. One export pulse or one import pulse is one watt-hour (the STP
 - `tokens`: 48-bit cumulative tokens.
 - `credit`: 48-bit signed, `credit = e_exp − e_imp − tokens·q`.
 
-An export pulse adds one to `credit`; when it reaches `q = 1000` a token is minted and `credit` returns to zero. An import pulse subtracts one. So `tokens = ⌊max over time of (e_exp − e_imp) / q⌋`: energy that came in from the grid and went back out mints nothing, and splitting an interval cannot mint extra. Every 10 tokens (10 kWh) the die signs one record. Records carry cumulative counts, so a lost record loses nothing.
+An export pulse adds one to `credit`; when it reaches `q = 1000` a token is minted and `credit` returns to zero. An import pulse subtracts one. So `tokens = ⌊max over time of (e_exp − e_imp) / q⌋`: energy that came in from the grid and went back out mints nothing, and splitting an interval cannot mint extra. Every token (1 kWh) the die signs one record, so each kilowatt-hour is credited on its own; at that moment `credit` is zero and `e_exp − e_imp = 1000 · tokens` exactly. Records carry cumulative counts, so a lost record loses nothing. A token minted while the previous record is still being signed (ready poll up to 1.1 s, then 2454 bytes at 115 kbaud, about 0.21 s) is carried by the next record; that only happens above roughly 2.7 MW.
 
 `q`, the record cadence and the registers have no host write port.
 
@@ -54,7 +54,7 @@ The QS7001 signs 32 bytes. Fields are big-endian.
 
 There is no wall-clock time in the record. The ledger orders records by `seq` and timestamps them at inclusion. The calibration CRC lets the ledger refuse a record made under an image other than the certified one.
 
-UART frame: `EC 01`, the 32-byte record, then the signature (2420 bytes for ML-DSA-44, 4627 for ML-DSA-87; parameter `SIG_BYTES`).
+UART frame: `EC 01`, the 32-byte record, then the signature (2420 bytes for ML-DSA-44, 4627 for ML-DSA-87; parameter `SIG_BYTES`). With ML-DSA-44 a frame is 2454 bytes, about 0.21 s at 10 bits per byte.
 
 ## Power
 

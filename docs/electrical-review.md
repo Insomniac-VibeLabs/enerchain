@@ -1,6 +1,6 @@
 # Electrical review, doc-1.1 to v0.0.1
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09).
+Edition: v0.0.1 (doc-1.2, 2026-10-09; amended in doc-1.3, see M-8).
 
 This is the record of checking the EC-SEAL1 board and the EC-MINT1 die against what they are supposed to do: measure energy at the generator or the grid connection, survive a power cut, and sign only what was measured. Each finding says what was wrong, how it was found, and what revision B does instead. Calculations use 240 V rms, 50 Hz unless noted.
 
@@ -36,7 +36,7 @@ Revision B uses an LNK304 high-side buck to a 12 V rail (universal input, up to 
 
 QS_VDD was fed from 3.3 V through R23, 47 Ω, so that the tamper crowbar Q4 could short it. A secure element signing at a few tens of milliamps would see a 1 V drop. When Q4 fired it drew 70 mA through 47 Ω from a 50 mA regulator, pulling the whole 3.3 V rail down with it, including the EC-MINT1 that was supposed to be sending the erase command.
 
-Revision B switches QS_VDD with a P-channel MOSFET (Q5) whose gate is the delayed ZEROIZE. Q4 now only discharges the isolated signer rail through R23.
+Revision B switches QS_VDD with a P-channel MOSFET (Q5) whose gate is the delayed ZEROIZE. Q4 now only discharges the isolated signer rail through R23, which doc-1.3 raises to 1 kΩ (M-8).
 
 ### C-5. A power cut erased the meter
 
@@ -78,9 +78,13 @@ A 100 mA time-lag fuse in front of a capacitor-input supply sees an inrush of ab
 
 `n` was 16 bits (65 535 tokens, a few years of a home array) and W 32 bits (4.3 GWh, a few hours of a 1 GW plant). Revision B uses 48 bits for every cumulative register.
 
+### M-8. Signer-rail switch and discharge overlap (doc-1.3)
+
+Q5 and Q4 share CROW_G, a 220 kΩ / 1 µF delay (τ = 0.22 s). Q5 opens once CROW_G passes VDD − |V_th| (2.4–2.9 V for the DMG2305UX); Q4 closes once CROW_G passes its own V_th (1.0–2.5 V for the 2N7002). In the typical case Q4 turns on first, at about 0.22·ln(3.3/1.2) ≈ 0.22 s, and Q5 only opens at about 0.29 s, so with R23 at 47 Ω the overlap would again draw 70 mA from the 50 mA regulator, the C-4 brownout. doc-1.3 makes R23 1 kΩ (same 1206 land): the overlap draws at most 3.3 mA, and the isolated rail (C15, 100 nF) still discharges with a 0.1 ms time constant. Open item O-10 is the bench check.
+
 ## Minor
 
-- R17, 2.2 kΩ, needed about 0.4 mA of photocurrent before the light sensor could trip the latch with the cover spring still closed. 10 kΩ needs about 60 µA and still holds MESH at 0.30 V, under the 0.9 V threshold. The real photocurrent at bench lighting is test step 3.
+- R17, 2.2 kΩ, needed about 0.4 mA of photocurrent before the light sensor could trip the latch with the cover spring still closed. 10 kΩ needs about 70 µA and still holds MESH at 0.30 V, under the 0.9 V threshold. The real photocurrent at bench lighting is test step 3.
 - The BOM and centroid writers did not quote `"provision, seal over"`, which split the J5 row into an extra column.
 - `tb_mint.v` did not compile against the doc-1.1 top: every port name was wrong. It is replaced by `tb_ec_mint1.v`.
 - `tools/gen_board.py` printed clearance failures but still wrote the Gerbers and exited 0. It now exits non-zero.
@@ -92,10 +96,10 @@ A 100 mA time-lag fuse in front of a capacitor-input supply sees an inrush of ab
 | --- | --- | --- |
 | Shunt | 100 µΩ, 40 A: 4.0 mV rms, 0.16 W | Kept |
 | Current channel | 5.66 mV pk × 16 = 90 mV against ±300 mV; clips near 130 A rms | Kept |
-| Divider | 240 V → 0.120 V rms; 264 V → 0.187 V pk < 0.3 V; 177 V per part at the MOV clamp, 700 V rating | Kept, moved to Neutral |
+| Divider | 240 V → 0.120 V rms; 264 V → 0.187 V pk < 0.3 V; 177.5 V per part at the 710 V MOV clamp, 700 V rating | Kept, moved to Neutral |
 | MOV | 275 V ac continuous, above 240 V + 10 % | Kept, now Neutral to Line after the fuse |
 | LM2936 | 40 V input, 50 mA output; 0.26 W at 30 mA from 12.1 V | Kept, logic only |
-| Tamper latch | Q2 on at MESH ≈ 0.9 V; R21 gives ~265 µA of hold current against ~12 µA of pull-down | Kept |
+| Tamper latch | Q2 on at MESH ≈ 0.9 V; R21 gives ~265 µA of hold current against at most ~13 µA through R18 | Kept |
 | Crystal loads | 27 pF C0G for an 18 pF crystal with a few pF of stray | Kept |
 | FRAM endurance | 10¹⁴ cycles; at 9.6 kW about 10⁸ writes a year | New part, adequate |
 

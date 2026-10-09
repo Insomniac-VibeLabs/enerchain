@@ -1,27 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="500" viewBox="0 0 920 500">
-  <rect width="920" height="500" fill="#f7f4ee"/>
-  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">07 — Slept radio</text>
-  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">Forwards a signed record, then returns to sleep. doc-0.7</text>
-  <line x1="40" y1="140" x2="180" y2="140" stroke="#111"/>
-  <text x="44" y="128" font-size="12">from element TX</text>
-  <rect x="180" y="110" width="200" height="80" fill="none" stroke="#111"/>
-  <text x="210" y="142" font-size="13">U4 2.4 GHz radio</text>
-  <text x="210" y="164" font-size="12">sleep until TX edge</text>
-  <line x1="380" y1="150" x2="460" y2="150" stroke="#111"/>
-  <line x1="460" y1="130" x2="500" y2="130" stroke="#111"/>
-  <line x1="460" y1="170" x2="500" y2="170" stroke="#111"/>
-  <rect x="500" y="122" width="28" height="16" fill="none" stroke="#111"/>
-  <text x="508" y="134" font-size="10">L1</text>
-  <rect x="500" y="162" width="28" height="16" fill="none" stroke="#111"/>
-  <text x="508" y="174" font-size="10">C5</text>
-  <line x1="528" y1="130" x2="620" y2="150" stroke="#111"/>
-  <line x1="528" y1="170" x2="620" y2="150" stroke="#111"/>
-  <polygon points="620,150 700,120 700,180" fill="none" stroke="#111"/>
-  <text x="708" y="154" font-size="12">antenna</text>
-  <text x="24" y="250" font-size="13">Pi match is L1 with C5 to ground at the antenna feed. Values follow the module datasheet.</text>
-  <text x="24" y="272" font-size="13">10 mW for 100 ms is 1 mJ per posting. Radio current is zero between tokens.</text>
-  <text x="24" y="294" font-size="13">Payload is the signed record only. The radio has no key and cannot mint.</text>
-  <text x="24" y="340" font-size="13">Duty: one burst per token, not a beacon.</text>
-  <text x="24" y="400" font-size="12" fill="#444">Symbol set: IEC resistor/capacitor style for the match, antenna as a tapered radiator.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="460" viewBox="0 0 960 460" font-family="ui-sans-serif,sans-serif">
+  <rect width="960" height="460" fill="#f7f4ee"/>
+  <text x="24" y="32" font-size="16" fill="#111" text-anchor="start">07 — Radio header J4: transmit only</text>
+  <text x="24" y="52" font-size="12" fill="#444" text-anchor="start">The radio forwards signed frames. It has no key and no path back into U3, U4 or U6. EC-SEAL1 rev B, doc-1.3.</text>
+  <rect x="520" y="100" width="160" height="180" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="600" y="116" font-size="12" fill="#111" text-anchor="middle" font-weight="600">J4</text>
+  <text x="600" y="130" font-size="10" fill="#444" text-anchor="middle">radio module header</text>
+  <line x1="510" y1="140" x2="520" y2="140" stroke="#111" stroke-width="1.2"/>
+  <text x="524" y="144" font-size="9" fill="#111" text-anchor="start">1 VRECT</text>
+  <line x1="510" y1="170" x2="520" y2="170" stroke="#111" stroke-width="1.2"/>
+  <text x="524" y="174" font-size="9" fill="#111" text-anchor="start">2 GND</text>
+  <line x1="510" y1="200" x2="520" y2="200" stroke="#111" stroke-width="1.2"/>
+  <text x="524" y="204" font-size="9" fill="#111" text-anchor="start">3 GND</text>
+  <line x1="510" y1="230" x2="520" y2="230" stroke="#111" stroke-width="1.2"/>
+  <text x="524" y="234" font-size="9" fill="#111" text-anchor="start">4 RX ← UART</text>
+  <line x1="510" y1="260" x2="520" y2="260" stroke="#111" stroke-width="1.2"/>
+  <text x="524" y="264" font-size="9" fill="#111" text-anchor="start">5, 6 empty</text>
+  <line x1="510" y1="140" x2="300" y2="140" stroke="#111" stroke-width="1.2"/>
+  <polygon points="300,140 294,132 220,132 220,148 294,148" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="223" y="144" font-size="10" fill="#111" text-anchor="start">VRECT 12 V</text>
+  <polyline points="510,170 460,170 460,200 510,200" fill="none" stroke="#111" stroke-width="1.2"/>
+  <line x1="460" y1="185" x2="400" y2="185" stroke="#111" stroke-width="1.2"/>
+  <circle cx="460" cy="185" r="2.6" fill="#111"/>
+  <line x1="400" y1="185" x2="400" y2="191" stroke="#111" stroke-width="1.2"/>
+  <line x1="390" y1="191" x2="410" y2="191" stroke="#111" stroke-width="1.6"/>
+  <line x1="394" y1="195" x2="406" y2="195" stroke="#111" stroke-width="1.6"/>
+  <line x1="398" y1="199" x2="402" y2="199" stroke="#111" stroke-width="1.6"/>
+  <line x1="390" y1="230" x2="403" y2="230" stroke="#111" stroke-width="1.2"/>
+  <line x1="437" y1="230" x2="450" y2="230" stroke="#111" stroke-width="1.2"/>
+  <rect x="403" y="224" width="34" height="12" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="420" y="218" font-size="11" fill="#111" text-anchor="middle">R26</text>
+  <text x="420" y="252" font-size="10" fill="#444" text-anchor="middle">100 Ω</text>
+  <line x1="450" y1="230" x2="510" y2="230" stroke="#111" stroke-width="1.2"/>
+  <line x1="300" y1="230" x2="390" y2="230" stroke="#111" stroke-width="1.2"/>
+  <polygon points="300,230 294,222 185,222 185,238 294,238" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="188" y="234" font-size="10" fill="#111" text-anchor="start">UART_TX from U3</text>
+  <text x="40" y="330" font-size="12" fill="#111" text-anchor="start">One frame per token, that is per kWh: EC 01 + 32-byte record + 2420-byte ML-DSA-44 signature = 2454 bytes.</text>
+  <text x="40" y="349" font-size="12" fill="#111" text-anchor="start">8N1 at 16 MHz / 139 = 115108 baud: 0.21 s per frame.</text>
+  <text x="40" y="368" font-size="12" fill="#111" text-anchor="start">Budget: average under 40 mA at 12 V. Even at the full 0.48 W for 1 s per frame, about 0.5 J per kWh (1.3 × 10⁻⁷ of it).</text>
+  <text x="40" y="387" font-size="12" fill="#111" text-anchor="start">The radio takes its power from VRECT so its transmit current never passes through the 50 mA LM2936.</text>
 </svg>

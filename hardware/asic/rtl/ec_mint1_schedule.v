@@ -8,14 +8,15 @@
 // nothing: tokens = floor(max over time of (e_exp - e_imp) / Q).
 // Splitting an interval cannot mint extra, because credit carries.
 //
-// Every SIGN_EVERY tokens, sign_req pulses once. The record carries the
+// Every SIGN_EVERY tokens, sign_req pulses once. As built SIGN_EVERY = 1:
+// every token (1 kWh of net export) is signed and credited on its own. The record carries the
 // cumulative registers, so a lost or skipped record loses nothing.
 //
 // q, the registers and the credit have no host write port. `load` is
 // driven only by the boot FSM from the FRAM image, before counting starts.
 module ec_mint1_schedule #(
     parameter [15:0] Q          = 16'd1000,
-    parameter [7:0]  SIGN_EVERY = 8'd10
+    parameter [7:0]  SIGN_EVERY = 8'd1
 ) (
     input  wire        clk,
     input  wire        rst_n,

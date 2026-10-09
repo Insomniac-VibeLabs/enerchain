@@ -1,6 +1,6 @@
 # Hardware binding of generation to tokens
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09). The token schedule, the signed payload and the pair rule below replace the doc-0.4 versions; the binding itself is unchanged.
+Edition: v0.0.1 (doc-1.3, 2026-10-09). The token schedule, the signed payload and the pair rule below replace the doc-0.4 versions; the binding itself is unchanged.
 
 This note specifies a measurement path whose signed output is the only input to token issuance. The signature is non-repudiable for the energy that passed the sealed terminals. It is proof of that integral. It is not a shipment of energy to another region.
 
@@ -51,13 +51,13 @@ T = \left\lfloor \frac{\max_{t' \le t} \bigl(E_x(t') - E_m(t')\bigr)}{q} \right\
 
 Tokens follow the high-water mark of net export. Energy imported and exported again does not raise that mark, so a loop through a battery mints nothing. Carrying \(c\) pulse by pulse means an interval cannot be split to round up. None of the four registers has a host write port.
 
-Every ten tokens the core builds a record and the signer signs it:
+For every token, that is for every kilowatt-hour of net export, the core builds a record and the signer signs it:
 
 \[
 (\text{meter id},\; \text{role},\; \text{class},\; \text{seq},\; E_x,\; E_m,\; T,\; \text{CRC of the calibration image}).
 \]
 
-Every field is cumulative, so a record that is lost costs nothing: the next one carries the totals. The exact byte layout is in [hardware/asic/spec.md](../hardware/asic/spec.md). Validators accept a record only if \(\text{seq}\) is greater than the last accepted one and none of \(E_x, E_m, T\) went down. A replayed record fails the sequence check; a deleted record is simply superseded.
+The record is built the moment its token is minted, when \(c = 0\), so every record satisfies \(E_x - E_m = qT\) exactly. Every field is cumulative, so a record that is lost costs nothing: the next one carries the totals. The exact byte layout is in [hardware/asic/spec.md](../hardware/asic/spec.md). Validators accept a record only if \(\text{seq}\) is greater than the last accepted one and none of \(E_x, E_m, T\) went down. A replayed record fails the sequence check; a deleted record is simply superseded.
 
 The registers, the sequence number and the calibration image are kept in an F-RAM inside the seal, in two CRC-checked slots, so a power cut does not reset them. The signer also stores the last values it signed and will not sign lower ones, so rolling the F-RAM back does not produce a second signature over the same energy.
 
@@ -73,7 +73,7 @@ The following sit inside one tamper-responding enclosure, on the conductor that 
 - secure element holding the signing key
 - mesh, light sensor, and temperature sensor tied to key zeroization
 
-The host processor that talks to the network is outside the core. It can submit the signed payload. It cannot increment a counter or ask the element to sign a different token count. doc-0.6 removes the host from the mint path entirely: the metrology core pulses, the element signs, a slept radio forwards. Draw is capped at a present-day meter in [meter-burden.md](meter-burden.md). The wiring is [schematics/mint-path.svg](schematics/mint-path.svg).
+The host processor that talks to the network is outside the core. It can submit the signed payload. It cannot increment a counter or ask the element to sign a different token count. doc-0.6 removes the host from the mint path entirely: the metrology core pulses, the element signs, a slept radio forwards. Draw is capped at a present-day meter in [meter-burden.md](meter-burden.md). The wiring is [schematics/mint-path.svg](schematics/mint-path.svg) and the circuit sheets in [schematics/](schematics/README.md).
 
 Identity of the core is bound to the silicon, not to a sticker. SRAM startup state used as a physically unclonable identifier is a published meter-security construction [Rincón, Melo, Farias, and Carmo 2021]. The certification record maps that identifier to the device public key. A cloned board that does not reproduce the identifier does not match the certified key.
 

@@ -1,9 +1,9 @@
-// Schedule vector, v0.0.1. Q = 1000 and a record every 10 tokens, as built.
+// Schedule vector, v0.0.1. Q = 1000 and a record for every token (1 kWh), as built.
 // The Python spec is tools/check_schedule.py; this is the chip-house run.
 //  - 1000 export pulses mint one token; 999 do not.
 //  - 400 then 600 mint one token, not two.
 //  - 500 import pulses then 1500 export pulses mint one token (net 1000).
-//  - The tenth token raises sign_req once.
+//  - Every token raises sign_req once, and nothing else does.
 `timescale 1ns/1ps
 module tb_schedule;
     reg clk = 0;
@@ -17,7 +17,7 @@ module tb_schedule;
 
     always #31.25 clk = ~clk;
 
-    ec_mint1_schedule #(.Q(16'd1000), .SIGN_EVERY(8'd10)) dut (
+    ec_mint1_schedule #(.Q(16'd1000), .SIGN_EVERY(8'd1)) dut (
         .clk(clk), .rst_n(rst_n), .count_en(count_en),
         .exp_rise(ex), .imp_rise(im), .load(1'b0),
         .ld_exp(48'd0), .ld_imp(48'd0), .ld_tok(48'd0), .ld_credit(48'd0), .ld_since(8'd0),
@@ -48,10 +48,10 @@ module tb_schedule;
         count_en = 1;
         pe(999);
         repeat (2) @(posedge clk);
-        if (mints != 0) begin fails = fails + 1; $display("FAIL 999 minted"); end
+        if (mints != 0 || signs != 0) begin fails = fails + 1; $display("FAIL 999 minted"); end
         pe(1);
         repeat (2) @(posedge clk);
-        if (mints != 1 || tokens != 1 || credit != 0) begin fails = fails + 1; $display("FAIL 1000"); end
+        if (mints != 1 || tokens != 1 || credit != 0 || signs != 1) begin fails = fails + 1; $display("FAIL 1000"); end
         pe(400); pe(600);
         repeat (2) @(posedge clk);
         if (tokens != 2) begin fails = fails + 1; $display("FAIL split"); end
@@ -62,11 +62,11 @@ module tb_schedule;
         end
         pe(7000);
         repeat (2) @(posedge clk);
-        if (tokens != 10 || signs != 1) begin
+        if (tokens != 10 || mints != 10 || signs != 10) begin
             fails = fails + 1; $display("FAIL sign_req tokens=%0d signs=%0d", tokens, signs);
         end
         if (fails == 0)
-            $display("PASS schedule: one token per 1000 net-export Wh, record every 10 tokens");
+            $display("PASS schedule: one token per 1000 net-export Wh, one signed record per token (1 kWh)");
         $finish;
     end
 endmodule

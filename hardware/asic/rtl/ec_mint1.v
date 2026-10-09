@@ -17,6 +17,11 @@
 //    being held in a 2420-byte flop array, and the signer is polled for a
 //    ready byte (0x5A) before the signature is clocked. doc-1.1 clocked the
 //    signature out with no wait for the signing time.
+//  - One record per token (SIGN_EVERY = 1), so every kWh is signed and
+//    credited on its own. A token minted while a record is still being
+//    signed sets sign_pending again; the next record carries both, because
+//    every field is cumulative. Nothing is lost when tokens come faster
+//    than about one per 1.3 s (a site above roughly 2.7 MW).
 //  - The STPM32 is put in SPI mode on its EN rising edge with SCS low, and
 //    STP_CS_N is active low.
 //
@@ -35,7 +40,7 @@
 // UART frame: EC 01, the 32-byte record, then SIG_BYTES signature bytes.
 module ec_mint1 #(
     parameter [15:0] Q          = 16'd1000,  // pulses (Wh) per token
-    parameter [7:0]  SIGN_EVERY = 8'd10,     // tokens per signed record
+    parameter [7:0]  SIGN_EVERY = 8'd1,      // tokens per signed record: one per kWh
     parameter integer SIG_BYTES = 2420,      // ML-DSA-44; 4627 for ML-DSA-87
     parameter integer UART_DIV  = 139,
     parameter integer T_WAIT    = 16000,     // 1 ms STPM32 select timing

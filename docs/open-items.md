@@ -1,6 +1,6 @@
 # Open items
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09).
+Edition: v0.0.1 (doc-1.3, 2026-10-09).
 
 What is not done, what was assumed, and what has to be true before a meter leaves the bench. "Verify" items are facts about a catalog part that the review could not read from the datasheet here; the design assumes them and says where.
 
@@ -13,6 +13,8 @@ What is not done, what was assumed, and what has to be true before a meter leave
 **O-3. QS7001 (verify).** Public material confirms a RISC-V secure microcontroller with hardware ML-DSA (ML-DSA-87 is named) and ML-KEM. Still to confirm under the vendor's datasheet and SDK: that ML-DSA-44 is offered (if not, set `SIG_BYTES = 4627` and certify meters as ML-DSA-87; the ledger supports both); that a customer image like `firmware/qs7001/sign_oracle.c` can be loaded and locked; non-volatile storage for the rollback guard; the QFN-32 pin map used on the board (from the vendor summary 6658GS); its supply range and signing current.
 
 **O-4. LNK304 design values (verify).** The buck uses the standard LinkSwitch-TN high-side buck values: 1 mH inductors, 4.7 µF 400 V input capacitors, feedback 13.0 kΩ / 2.05 kΩ for 12 V with a 1.65 V FB reference, ultrafast freewheel diode. Confirm against the LNK304 datasheet and run the PI design tool for the 12 V, 70 mA load. Confirm the RLB0914-102KL saturation current exceeds the LNK304 current limit.
+
+**O-10. Signer-rail gate thresholds (verify).** Q5 (DMG2305UX) and Q4 (2N7002) share the delayed gate CROW_G. With the datasheet threshold spreads, Q4 can turn on before Q5 has opened; R23 = 1 kΩ limits that overlap to 3.3 mA. Confirm on the bench that VDD does not sag when ZEROIZE fires (TEST.md step 16).
 
 **O-5. LM2936 output capacitor (verify).** C3 is a 10 µF ceramic. Confirm it falls inside the LM2936 output-capacitor ESR stability region; if not, fit a 10 µF tantalum or add series resistance.
 
@@ -32,7 +34,7 @@ What is not done, what was assumed, and what has to be true before a meter leave
 
 **S-3. Fees and spam.** Transfers carry no fee. A public network needs a fee or rate limit per account and per meter.
 
-**S-4. Throughput.** An issuance is a 32-byte record and a 2420-byte signature. In the devnet's JSON encoding that is about 5 kB, so a 1 MiB block holds about 200 issuances; a binary encoding would roughly double that. At one record per meter per 10 kWh, one million 10 kW home systems produce about five million records a day. That needs regional books (one chain per grid region, which is already the economic design), short block times, or both. Signature aggregation is not available for ML-DSA.
+**S-4. Throughput.** An issuance is a 32-byte record and a 2420-byte signature. In the devnet's JSON encoding that is about 4.9 kB, so a 1 MiB block holds about 210 issuances; a binary encoding would roughly double that. At one record per meter per kWh, and two meters per site, one million home systems that each export 25 kWh a day produce about fifty million records a day, about 580 a second, or close to three full JSON blocks a second. That needs regional books (one chain per grid region, which is already the economic design), short block times, or both. Signature aggregation is not available for ML-DSA.
 
 **S-5. Double counting with existing instruments.** The energy a token records has usually also been sold to a utility and may also earn a renewable energy certificate or guarantee of origin. Whether a token replaces, accompanies, or must be reconciled with those is a market-design and legal decision, not a protocol one. It is undecided.
 

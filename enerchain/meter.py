@@ -20,7 +20,7 @@ from .record import (CLASS_TAG, MAX48, ROLE_GEN, ROLE_GRID, MeterRecord,
                      crc8, crc16)
 
 Q_WH = 1000
-SIGN_EVERY = 10
+SIGN_EVERY = 1     # one signed record, and one ledger credit, per token (1 kWh)
 CMIN = -(1 << 47)
 
 ROM_ADDR = 0x0100

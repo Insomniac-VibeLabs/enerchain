@@ -23,4 +23,4 @@ Principle: no single organization has unilateral control of verification or issu
 - **Certification is k of n.** Genesis names n certifier keys and a threshold k. A meter, a pair or a revocation is valid only with approvals from k distinct genesis certifiers. The devnet default is 2 of 3. A public network should use independent bodies (a metrology authority, a grid operator, a consumer body) and k of at least 2.
 - **Revocation** stops a meter's records from being accepted. Coins already minted stay.
 - **Validators** are a fixed proof-of-authority set in genesis, taking turns by height. Changing the set, the threshold or the parameters requires a new genesis in v0.0.1. On-chain governance and a BFT validator protocol are open item S-1.
-- **The schedule** (q = 1000 Wh, a record every 10 tokens) is in the meter die, not on the ledger. Changing it is a new die and a new certificate, which is the point.
+- **The schedule** (q = 1000 Wh, a signed record for every token) is in the meter die, not on the ledger. Changing it is a new die and a new certificate, which is the point.

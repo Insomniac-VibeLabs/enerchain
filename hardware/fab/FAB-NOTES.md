@@ -16,4 +16,4 @@ The signer is a SEALSQ QS7001, not a VaultIC 409. The QS7001 pin map used here i
 
 A board house builds from Gerber or ODB++, a drill file, a centroid file, and a BOM. Doc-0.9 had the BOM and the netlist and said the plots did not exist yet. They exist now, for EC-SEAL1, and they are not a complete QFN fanout. The manufacturer file says which copper is finished.
 
-Do not send the SVG sheets in `docs/schematics/` as fabrication artwork. They are design drawings, and several of them draw the parts doc-1.1 rejected.
+Do not send the SVG sheets in `docs/schematics/` as fabrication artwork. They are design drawings of revision B, generated from the same values as the netlist; the order is the files in `hardware/fab/ec-seal1/`.

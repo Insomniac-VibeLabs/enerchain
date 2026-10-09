@@ -345,7 +345,10 @@ add_part("C14", "1 uF", "Murata GRM188R71C105KA12", "0603", 90, 40, 90, [
 # When the delayed ZEROIZE raises CROW_G, Q5 opens and Q4 discharges the
 # rail through R23. doc-1.1 fed the signer through 47 ohm and crowbarred
 # the rail, which dropped about 1 V at sign current and, when fired, pulled
-# 70 mA from a 50 mA regulator.
+# 70 mA from a 50 mA regulator. Q4 (Vth 1.0-2.5 V) can turn on before Q5
+# (|Vth| 0.4-0.9 V) has opened, since they share CROW_G, so R23 is 1 k: the
+# overlap draws at most 3.3 mA, and the rail (C15, 100 nF) still discharges in
+# well under a millisecond.
 add_part("Q5", "P-FET rail switch", "Diodes DMG2305UX-7", "SOT-23", 82, 35, 0, [
     p("G", -1.0, 0.9, 0.6, 0.6, "CROW_G", 0),
     p("S", -1.0, -0.9, 0.6, 0.6, "VDD", 0),
@@ -356,7 +359,7 @@ add_part("Q4", "2N7002 discharge", "onsemi 2N7002", "SOT-23", 96, 36, 0, [
     p("S", -1.0, -0.9, 0.6, 0.6, "GND", 0),
     p("D", 1.0, 0, 0.6, 0.6, "QS_DIS", 0),
 ])
-add_part("R23", "47 ohm 0.25 W", "Panasonic ERJ-P08J470V", "1206", 88, 32, 0, [
+add_part("R23", "1 k", "Panasonic ERJ-8ENF1001V", "1206", 88, 32, 0, [
     p("1", -1.4, 0, 0.8, 1.0, "QS_VDD", 0),
     p("2", 1.4, 0, 0.8, 1.0, "QS_DIS", 0),
 ])

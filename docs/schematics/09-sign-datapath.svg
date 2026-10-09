@@ -2,34 +2,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="760" viewBox="0 0 1100 760">
   <rect width="1100" height="760" fill="#f7f4ee"/>
   <text x="24" y="28" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#111">09 — Hardwired sign datapath</text>
-  <text x="24" y="48" font-size="12" fill="#444">3.3 V IO, 1.2 V core from on-die LDO. Clock 16.384 MHz. doc-0.8. IEC registers as boxes, gates as standard shapes.</text>
-  <rect x="24" y="70" width="140" height="36" fill="none" stroke="#111"/><text x="40" y="92" font-size="12">CF 3.3 V</text>
+  <text x="24" y="48" font-size="12" fill="#444">Top row: EC-MINT1, 3.3 V IO, 1.2 V core, 16.000 MHz. Bottom rows: the ML-DSA engine inside the QS7001 (a sketch, not a tapeout). doc-1.3.</text>
+  <rect x="24" y="70" width="140" height="36" fill="none" stroke="#111"/><text x="34" y="92" font-size="12">CF_EXP, CF_IMP</text>
   <line x1="164" y1="88" x2="210" y2="88" stroke="#111"/>
   <rect x="210" y="70" width="70" height="36" fill="none" stroke="#111"/><text x="228" y="92" font-size="11">DFF</text>
   <line x1="280" y1="88" x2="310" y2="88" stroke="#111"/>
   <rect x="310" y="70" width="70" height="36" fill="none" stroke="#111"/><text x="328" y="92" font-size="11">DFF</text>
   <text x="210" y="122" font-size="10" fill="#444">2-flop sync</text>
   <line x1="380" y1="88" x2="430" y2="88" stroke="#111"/>
-  <rect x="430" y="64" width="120" height="48" fill="none" stroke="#111"/><text x="446" y="92" font-size="11">+1 counter</text>
-  <text x="446" y="128" font-size="10">W watt-hours</text>
+  <rect x="430" y="64" width="120" height="48" fill="none" stroke="#111"/><text x="446" y="92" font-size="11">+1 counters</text>
+  <text x="446" y="128" font-size="10">E_x, E_m watt-hours, 48 bit</text>
   <line x1="550" y1="88" x2="600" y2="88" stroke="#111"/>
-  <rect x="600" y="64" width="110" height="48" fill="none" stroke="#111"/><text x="618" y="84" font-size="11">CMP q=1000</text><text x="618" y="100" font-size="10">Wh / token</text>
+  <rect x="600" y="64" width="110" height="48" fill="none" stroke="#111"/><text x="618" y="84" font-size="11">CMP c = q</text><text x="618" y="100" font-size="10">q = 1000 Wh</text>
   <line x1="710" y1="88" x2="760" y2="88" stroke="#111"/>
-  <rect x="760" y="64" width="120" height="48" fill="none" stroke="#111"/><text x="778" y="84" font-size="11">SUB residual</text><text x="778" y="100" font-size="10">r ← r+w−nq</text>
+  <rect x="760" y="64" width="120" height="48" fill="none" stroke="#111"/><text x="772" y="84" font-size="11">credit c, tokens T</text><text x="772" y="100" font-size="10">c±1; at q: T+1, c←0</text>
   <rect x="430" y="180" width="450" height="70" fill="none" stroke="#111"/>
-  <text x="446" y="204" font-size="12">message register m = (id, t0, t1, w, n, W, r, class)</text>
-  <text x="446" y="226" font-size="11">loaded only from the counter and the comparator, not from a bus master</text>
+  <text x="446" y="204" font-size="12">m = (id, role, class, seq, E_x, E_m, T, cal CRC), 32 B</text>
+  <text x="446" y="226" font-size="11">built for every token (1 kWh), only from the counters; no bus master</text>
   <line x1="820" y1="112" x2="820" y2="180" stroke="#111"/>
-  <rect x="40" y="290" width="200" height="90" fill="none" stroke="#111"/><text x="56" y="322" font-size="12">SHAKE256 / Keccak</text><text x="56" y="342" font-size="11">sheet 10</text><text x="56" y="360" font-size="11">expands A, c</text>
+  <rect x="40" y="290" width="200" height="90" fill="none" stroke="#111"/><text x="56" y="322" font-size="12">SHAKE128/256, Keccak</text><text x="56" y="342" font-size="11">sheet 10</text><text x="56" y="360" font-size="11">expands A, c</text>
   <rect x="280" y="290" width="200" height="90" fill="none" stroke="#111"/><text x="296" y="322" font-size="12">NTT butterfly</text><text x="296" y="342" font-size="11">sheet 11</text><text x="296" y="360" font-size="11">w = A·y</text>
   <rect x="520" y="290" width="200" height="90" fill="none" stroke="#111"/><text x="536" y="322" font-size="12">z = y + c·s1</text><text x="536" y="342" font-size="11">poly add</text><text x="536" y="360" font-size="11">s1 in key SRAM</text>
   <rect x="760" y="290" width="200" height="90" fill="none" stroke="#111"/><text x="776" y="322" font-size="12">norm compare</text><text x="776" y="342" font-size="11">reject if ‖z‖ too big</text><text x="776" y="360" font-size="11">FIPS 204 bound</text>
   <line x1="140" y1="380" x2="140" y2="420" stroke="#111"/>
   <line x1="140" y1="420" x2="860" y2="420" stroke="#111"/>
   <line x1="860" y1="380" x2="860" y2="420" stroke="#111"/>
-  <rect x="300" y="450" width="420" height="56" fill="none" stroke="#111"/><text x="316" y="474" font-size="12">signature register σ, 2420 bytes, ML-DSA-44</text><text x="316" y="492" font-size="11">UART out at 115200, 3.3 V. Then sleep.</text>
-  <text x="24" y="560" font-size="13">Key SRAM is written once at provisioning. Runtime has no write port to sk.</text>
-  <text x="24" y="582" font-size="13">ZEROIZE shorts the SRAM supply rail and the key bits. Sheet 06.</text>
+  <rect x="300" y="450" width="420" height="56" fill="none" stroke="#111"/><text x="316" y="474" font-size="12">signature σ, 2420 bytes, ML-DSA-44, in the QS7001</text><text x="316" y="492" font-size="11">streamed through EC-MINT1 to the UART, 16 MHz / 139 ≈ 115 kbaud</text>
+  <text x="24" y="560" font-size="13">The key is generated once, at personalization, inside the QS7001. Runtime has no write port to sk.</text>
+  <text x="24" y="582" font-size="13">ZEROIZE (active high) makes EC-MINT1 send the erase, then opens the signer rail. Sheet 06.</text>
   <text x="24" y="604" font-size="13">This is the sign datapath, not a claim that every Keccak XOR is on this page. Round gates are sheet 10.</text>
   <text x="24" y="660" font-size="12" fill="#444">Voltages: IO 3.3 V from the meter LDO. Core 1.2 V from an on-die regulator. Decouple 100 nF at each rail.</text>
 </svg>

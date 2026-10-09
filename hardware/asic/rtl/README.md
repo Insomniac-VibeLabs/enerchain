@@ -1,6 +1,6 @@
 # RTL
 
-Edition: v0.0.1 (doc-1.2).
+Edition: v0.0.1 (doc-1.3).
 
 `ec_mint1.v` is the top. It instantiates `ec_mint1_schedule.v` (the net-export schedule), three `spi_byte.v` masters (FRAM, STPM32, QS7001) and `uart_tx.v`. That is the netlist. Run it with:
 

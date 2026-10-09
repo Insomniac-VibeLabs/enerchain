@@ -1,6 +1,6 @@
 # EC-SEAL1 circuits
 
-Edition: v0.0.1 (doc-1.2), board revision B. Voltages are the 240 V rms, 50/60 Hz service the divider is calculated for. 120 V service uses the same board; the supply is universal-input and the integral is smaller because the voltage is smaller, which is what the meter is supposed to report.
+Edition: v0.0.1 (doc-1.3), board revision B. Voltages are the 240 V rms, 50/60 Hz service the divider is calculated for. 120 V service uses the same board; the supply is universal-input and the integral is smaller because the voltage is smaller, which is what the meter is supposed to report.
 
 Why revision B exists, in one paragraph: in doc-1.1 logic ground was Neutral while the shunt sat in Line, so the STPM32 current inputs were at full mains voltage; the half-wave dropper had D1 reversed and could not charge its rail; even with D1 turned round, 330 nF could source about 11 mA at 240 V and 6.5 mA at 120 V, under the logic load; the signer was fed through 47 Ω; and export energy came out with a negative sign. The calculations are in [docs/electrical-review.md](../../../docs/electrical-review.md).
 
@@ -40,7 +40,7 @@ R10 and R11, 100 Ω 0.1%, stand in the Kelvin leads. C6, 10 nF C0G, is across th
 
 ## Voltage
 
-Four TNPV1206 499 kΩ resistors in series from N to VIP_S, then R8 1.00 kΩ to ground (Line). The ratio is 1000 / 1,997,000. At 240 V rms the STPM32 pin sees 0.120 V rms, 0.170 V peak; at 264 V (+10 %) 0.187 V peak, inside the ±0.3 V pin rating. Each 499 kΩ part drops 60 V rms and 177 V at the MOV clamp, against a 700 V rating. The string dissipates 29 mW.
+Four TNPV1206 499 kΩ resistors in series from N to VIP_S, then R8 1.00 kΩ to ground (Line). The ratio is 1000 / 1,997,000. At 240 V rms the STPM32 pin sees 0.120 V rms, 0.170 V peak; at 264 V (+10 %) 0.187 V peak, inside the ±0.3 V pin rating. Each 499 kΩ part drops 60 V rms and 177.5 V at the MOV clamp (710 V across the string), against a 700 V rating. The string dissipates 29 mW.
 
 R9, 1 kΩ, isolates the pin. TVS1 is a 5 V bidirectional part so a surge has somewhere to go and the normal waveform is not clipped. C5, 10 nF, is across R8.
 
@@ -97,17 +97,17 @@ This is the part that is transistors on purpose. No firmware can clear it except
 
 - R16, 100 kΩ, pulls MESH up to 3.3 V.
 - R17, 10 kΩ, and the cover spring SW1 hold MESH down while the cover is on: 3.3 V × 10 k / 110 k = 0.30 V.
-- PT1, a VEMT3700, collector on 3.3 V and emitter on MESH. With the spring still closed, about 60 µA of photocurrent lifts MESH past the Q2 threshold. (doc-1.1 used 2.2 kΩ, which needed about 0.4 mA.)
+- PT1, a VEMT3700, collector on 3.3 V and emitter on MESH. With the spring still closed, about 70 µA of photocurrent lifts MESH past the Q2 threshold: at 0.88 V, R17 sinks 88 µA and R18 + R19 6 µA, while R16 sources 24 µA. (doc-1.1 used 2.2 kΩ, which needed about 0.4 mA.)
 - R18, 47 kΩ, from MESH to Q2 base. Q2 is an MMBT3904, emitter ground. R19, 100 kΩ, holds that base down. Q2 turns on at MESH ≈ 0.6 V × (1 + 47/100) ≈ 0.9 V.
 - Q3 is an MMBT3906, emitter on 3.3 V. R20, 10 kΩ, from Q2 collector to Q3 base.
-- R21, 10 kΩ, from Q3 collector back to Q2 base: about 265 µA of base drive. That is the latch. Closing the cover again sinks only about 12 µA through R18, so the latch holds.
+- R21, 10 kΩ, from Q3 collector back to Q2 base: (3.3 − 0.6) V / 10 kΩ ≈ 270 µA, about 265 µA of base drive after R19. That is the latch. Closing the cover again sinks at most about 13 µA through R18 (MESH at 0 V), so the latch holds.
 - Q3 collector is ZEROIZE, active high, into EC-MINT1 pin 4 and QS7001 GPIO3.
 
 ## Signer rail
 
-Q5, a DMG2305UX P-channel MOSFET, switches VDD onto QS_VDD. Its gate is CROW_G: ZEROIZE delayed by R22, 220 kΩ, and C14, 1 µF. While CROW_G is low Q5 is fully on; the rail drop is millivolts. About 0.3 s after ZEROIZE rises, CROW_G passes VDD − |V_th| and Q5 opens; Q4, a 2N7002 on the same gate, discharges QS_VDD through R23, 47 Ω. EC-MINT1 sends `5C 5C` within microseconds of ZEROIZE, long before the rail opens.
+Q5, a DMG2305UX P-channel MOSFET, switches VDD onto QS_VDD. Its gate is CROW_G: ZEROIZE delayed by R22, 220 kΩ, and C14, 1 µF. While CROW_G is low Q5 is fully on; the rail drop is millivolts. About 0.3 s after ZEROIZE rises, CROW_G passes VDD − |V_th| and Q5 opens; Q4, a 2N7002 on the same gate, discharges QS_VDD through R23, 1 kΩ. The two thresholds (Q4 1.0–2.5 V, Q5 −0.4 to −0.9 V) overlap, so for up to about 0.2 s both can conduct; R23 holds that to 3.3 V / 1 kΩ = 3.3 mA, which the regulator does not notice. EC-MINT1 sends `5C 5C` within microseconds of ZEROIZE, long before the rail opens.
 
-doc-1.1 fed the signer through R23 directly and shorted the rail with Q4. The QS7001's signing current through 47 Ω would have dropped about 1 V, and firing the crowbar drew 70 mA from a 50 mA regulator, browning out the whole board.
+doc-1.1 fed the signer through a 47 Ω R23 directly and shorted the rail with Q4. Revision B as first drawn kept 47 Ω for the discharge path, which in the overlap above would again have drawn 70 mA; doc-1.3 makes it 1 kΩ. The QS7001's signing current through 47 Ω would have dropped about 1 V, and firing the crowbar drew 70 mA from a 50 mA regulator, browning out the whole board.
 
 The latch and the erase need power. Opening the cover while the meter is unpowered is not detected. That is open item O-1, and it is why revision B is a bench prototype, not a field meter.
 
@@ -119,4 +119,4 @@ Y2 is a 3.3 V CMOS oscillator, 16.000 MHz, into EC-MINT1 XI. R24, 100 kΩ, holds
 
 ## Radio
 
-J4 is six pins. Pin 1 is VRECT, 12 V, pins 2 and 3 are ground, pin 4 is the UART from EC-MINT1 through R26, 100 Ω. Pins 5 and 6 are empty. There is no receive path. The radio module regulates its own supply, must average under 40 mA at 12 V, and must carry a 2.5 kB frame (a record and its signature) every 10 kWh.
+J4 is six pins. Pin 1 is VRECT, 12 V, pins 2 and 3 are ground, pin 4 is the UART from EC-MINT1 through R26, 100 Ω. Pins 5 and 6 are empty. There is no receive path. The radio module regulates its own supply, must average under 40 mA at 12 V, and must carry a 2454-byte frame (a record and its signature) for every token, every kWh.

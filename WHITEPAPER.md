@@ -1,6 +1,6 @@
 # Enerchain whitepaper
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09). Sections 3, 4 and 7 are restated for the v0.0.1 issuance rule; the proposal is unchanged.
+Edition: v0.0.1 (doc-1.3, 2026-10-09). Sections 3, 4 and 7 are restated for the v0.0.1 issuance rule; the proposal is unchanged.
 
 ## 1. Plain-language summary
 
@@ -36,7 +36,7 @@ Active energy on a single-phase circuit is the time integral of voltage times cu
 - interval length
 - integrated watt-hours
 
-The meter counts energy in both directions. The schedule is one token per 1000 Wh of net export: imported energy is subtracted before anything is minted, so energy bought from the grid and sent back mints nothing. The count is computed in a die with no host write port and signed by a secure element that will not sign a record whose counters go backward. Two meters that saw the same energy sign the same token count; the ledger takes the smaller of a pair's two counts, so a meter cannot mint past its partner. The schedule and the hardware are specified in [docs/hardware-binding.md](docs/hardware-binding.md).
+The meter counts energy in both directions. The schedule is one token per 1000 Wh (1 kWh) of net export, and every token is signed and credited as it is minted: imported energy is subtracted before anything is minted, so energy bought from the grid and sent back mints nothing. The count is computed in a die with no host write port and signed by a secure element that will not sign a record whose counters go backward. Two meters that saw the same energy sign the same token count; the ledger takes the smaller of a pair's two counts, so a meter cannot mint past its partner. The schedule and the hardware are specified in [docs/hardware-binding.md](docs/hardware-binding.md).
 
 ## 5. Transfer
 
