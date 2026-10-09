@@ -4,7 +4,7 @@ Edition: doc-0.4 (2026-10-08).
 
 ## Plain language
 
-Regions trade the token, not the electrons. A settlement on the Moon, on Mars, in orbit, or in another system is another region. The token is proof that generation was measured there. It is not a physical export of electricity. A watt-hour is a watt-hour in every region. The local price does not have to match.
+A settlement on the Moon, on Mars, in orbit, or in another system have different power demands and requirements. The token is proof that generation was measured there. It is not a physical export of electricity. A watt-hour is a watt-hour in every region. The local price does not have to match.
 
 ## From feeder to system
 
