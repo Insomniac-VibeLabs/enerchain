@@ -1,6 +1,6 @@
 # Enerchain whitepaper
 
-Edition: doc-0.3 (2026-10-08).
+Edition: v0.0.1 (doc-1.2, 2026-10-09). Sections 3, 4 and 7 are restated for the v0.0.1 issuance rule; the proposal is unchanged.
 
 ## 1. Plain-language summary
 
@@ -22,7 +22,7 @@ Proof of Generation is the mint rule.
 
 Ordinary language: coins come from power you put on the grid, in an amount the hardware will allow, and they move like any other public-ledger asset.
 
-Technical language: the issuance transaction consumes a signed interval from a meter and produces a balance. The interval carries identity, time, voltage, current, power factor, and integrated active energy. The device key lives in a secure element. The element’s firmware releases a signature only for a coin count inside the published function of that integral. Account keys then transfer the balance. Validators accept the transfer if the signatures verify and the interval has not been minted.
+Technical language: the issuance transaction consumes a signed record from a meter and produces a balance. The record carries the meter identity, a sequence number, cumulative export and import watt-hours, and the cumulative token count the meter's schedule allowed for them. The device key lives in a secure element. The element signs only records built by the fixed-function schedule die, and only if they advance the last record it signed. Two certified meters form a pair: one at the generator terminals, one at the grid connection. The ledger credits the pair's owner with the smaller of the two token counts. Account keys then transfer the balance. Validators accept the transfer if the signatures verify and the nonce is next.
 
 Ordering of the ledger is a separate choice. It must not be the thing the electricity unit rewards. Hashing spends electricity to choose a history [de Vries 2018]. Injection mints the unit [Mihaylov et al. 2014].
 
@@ -36,7 +36,7 @@ Active energy on a single-phase circuit is the time integral of voltage times cu
 - interval length
 - integrated watt-hours
 
-The lock is that the secure element will not sign a record whose coin count exceeds the schedule for the integral it measured. A later specification sets the schedule. The research baseline is a fixed number of units per accepted kilowatt-hour, so two meters that saw the same energy sign the same issuance.
+The meter counts energy in both directions. The schedule is one token per 1000 Wh of net export: imported energy is subtracted before anything is minted, so energy bought from the grid and sent back mints nothing. The count is computed in a die with no host write port and signed by a secure element that will not sign a record whose counters go backward. Two meters that saw the same energy sign the same token count; the ledger takes the smaller of a pair's two counts, so a meter cannot mint past its partner. The schedule and the hardware are specified in [docs/hardware-binding.md](docs/hardware-binding.md).
 
 ## 5. Transfer
 
@@ -46,6 +46,18 @@ A holder spends with an account signature over the destination, the amount, and 
 
 Wholesale markets already price a megawatt-hour by place and time [Schweppe et al. 1988; Hogan 1992; Tan et al. 2022]. Enerchain keeps one measurement and lets regional books trade the unit. A feeder, a national grid, a planet, and a solar system are successive region sizes. The trade instrument does not change with the size.
 
-## 7. Sources
+## 7. Prior art, and what is new here
+
+Minting a currency unit for generated electricity is not new. NRGcoin minted for renewable injection and cleared it on a market [Mihaylov et al. 2014]. SolarCoin, launched in 2014, grants a coin per verified megawatt-hour of solar generation. Energy-sector ledgers such as Energy Web and Power Ledger, and certificate systems such as renewable energy certificates and guarantees of origin, already tie records to generation [Andoni et al. 2019]. Cryptographically signed meter readings are in commercial use, for example signed charging-station readings under German calibration law.
+
+What this design adds, in combination:
+
+- The token count is fixed in a dedicated schedule die with no processor and no host write port, and the signer will only sign what that die builds.
+- Minting is on the net-export high-water mark, so storage loops and self-dealing through the grid connection mint nothing.
+- Two independently sealed meters per site, and the ledger mints the minimum of their cumulative counts, which tolerates lost and late records.
+- The meter signature is a NIST post-quantum signature (ML-DSA) inside a meter-class power budget.
+- One measurement language from a feeder to a planetary region (a thesis, not a mechanism).
+
+## 8. Sources
 
 Full citations are in [docs/references.md](docs/references.md).

@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog yosys
+          pip install -e '.[test]' pillow
+      - name: Coin rule
+        run: python3 tools/check_schedule.py
+      - name: Python tests (includes RTL == model)
+        run: pytest -q
+      - name: RTL testbenches
+        run: |
+          iverilog -g2012 -o /tmp/sched hardware/asic/rtl/ec_mint1_schedule.v hardware/asic/tb/tb_schedule.v
+          vvp /tmp/sched | tee /tmp/sched.log
+          grep -q '^PASS' /tmp/sched.log
+          python3 tools/check_rtl.py
+      - name: Synthesis lint
+        run: |
+          cd hardware/asic/rtl
+          yosys -q -p "read_verilog ec_mint1.v ec_mint1_schedule.v spi_byte.v uart_tx.v; synth -top ec_mint1 -flatten; check -assert"
+      - name: Signing image host test
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror -o /tmp/oracle firmware/qs7001/test/test_sign_oracle.c
+          /tmp/oracle
+      - name: Board files match the generator
+        run: |
+          python3 tools/gen_board.py
+          git diff --exit-code -- hardware/fab/ec-seal1

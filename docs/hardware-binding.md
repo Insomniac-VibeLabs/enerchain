@@ -1,6 +1,6 @@
 # Hardware binding of generation to tokens
 
-Edition: doc-0.4 (2026-10-08).
+Edition: v0.0.1 (doc-1.2, 2026-10-09). The token schedule, the signed payload and the pair rule below replace the doc-0.4 versions; the binding itself is unchanged.
 
 This note specifies a measurement path whose signed output is the only input to token issuance. The signature is non-repudiable for the energy that passed the sealed terminals. It is proof of that integral. It is not a shipment of energy to another region.
 
@@ -36,24 +36,30 @@ The truncation error of a rectangular sum is bounded by the variation of \(p\) i
 
 ## Token schedule
 
-Let \(q\) be the quantum, in watt-hours, of one token. The core holds two registers, both inside the seal:
+Let \(q\) be the quantum, in watt-hours, of one token; \(q = 1000\) Wh, one token per accepted kilowatt-hour. The meter counts active energy in both directions as whole watt-hour pulses. The core holds, inside the seal:
 
-- \(W\), cumulative watt-hours since commissioning, monotone.
-- \(r\), the residual below one token, \(0 \le r < q\).
+- \(E_x\), cumulative export watt-hours, monotone.
+- \(E_m\), cumulative import watt-hours, monotone.
+- \(T\), cumulative tokens, monotone.
+- \(c\), a signed credit, \(c = E_x - E_m - qT\).
 
-On each sealed interval the core adds the new watt-hours \(w\) and signs an issuance only for the whole tokens that fall out:
-
-\[
-n = \left\lfloor \frac{r + w}{q} \right\rfloor, \qquad r \leftarrow (r + w) - n q, \qquad W \leftarrow W + w.
-\]
-
-doc-0.4 sets \(q = 1000\) Wh, so one token per accepted kilowatt-hour. \(n\) is a function of registers the host cannot write. Carrying \(r\) stops an attacker from minting by splitting an interval into pieces that each round up. The signed payload is
+An export pulse adds one to \(E_x\) and to \(c\); when \(c\) reaches \(q\), \(T\) increases by one and \(c\) returns to zero. An import pulse adds one to \(E_m\) and subtracts one from \(c\). Therefore
 
 \[
-(\text{meter id},\; t_0,\; t_1,\; w,\; n,\; W,\; r,\; \text{class}).
+T = \left\lfloor \frac{\max_{t' \le t} \bigl(E_x(t') - E_m(t')\bigr)}{q} \right\rfloor .
 \]
 
-Validators mint \(n\) and store \(W\). A later interval whose \(W\) is not exactly the previous \(W\) plus its \(w\) is rejected. That chain makes a deleted or replayed interval fail the next check.
+Tokens follow the high-water mark of net export. Energy imported and exported again does not raise that mark, so a loop through a battery mints nothing. Carrying \(c\) pulse by pulse means an interval cannot be split to round up. None of the four registers has a host write port.
+
+Every ten tokens the core builds a record and the signer signs it:
+
+\[
+(\text{meter id},\; \text{role},\; \text{class},\; \text{seq},\; E_x,\; E_m,\; T,\; \text{CRC of the calibration image}).
+\]
+
+Every field is cumulative, so a record that is lost costs nothing: the next one carries the totals. The exact byte layout is in [hardware/asic/spec.md](../hardware/asic/spec.md). Validators accept a record only if \(\text{seq}\) is greater than the last accepted one and none of \(E_x, E_m, T\) went down. A replayed record fails the sequence check; a deleted record is simply superseded.
+
+The registers, the sequence number and the calibration image are kept in an F-RAM inside the seal, in two CRC-checked slots, so a power cut does not reset them. The signer also stores the last values it signed and will not sign lower ones, so rolling the F-RAM back does not produce a second signature over the same energy.
 
 ## Hardware boundary
 
@@ -63,27 +69,31 @@ The following sit inside one tamper-responding enclosure, on the conductor that 
 - voltage divider on the same terminals
 - anti-alias filters and ADCs
 - metrology core that alone executes the sum and the schedule
+- the F-RAM that holds the counters and the calibration image
 - secure element holding the signing key
 - mesh, light sensor, and temperature sensor tied to key zeroization
 
-The host processor that talks to the network is outside the core. It can submit the signed payload. It cannot increment \(W\) or ask the element to sign a different \(n\). doc-0.6 removes the host from the mint path entirely: the metrology core pulses, the element signs, a slept radio forwards. Draw is capped at a present-day meter in [meter-burden.md](meter-burden.md). The wiring is [schematics/mint-path.svg](schematics/mint-path.svg).
+The host processor that talks to the network is outside the core. It can submit the signed payload. It cannot increment a counter or ask the element to sign a different token count. doc-0.6 removes the host from the mint path entirely: the metrology core pulses, the element signs, a slept radio forwards. Draw is capped at a present-day meter in [meter-burden.md](meter-burden.md). The wiring is [schematics/mint-path.svg](schematics/mint-path.svg).
 
 Identity of the core is bound to the silicon, not to a sticker. SRAM startup state used as a physically unclonable identifier is a published meter-security construction [Rincón, Melo, Farias, and Carmo 2021]. The certification record maps that identifier to the device public key. A cloned board that does not reproduce the identifier does not match the certified key.
 
 ## Why the host cannot fake the total
 
 1. The ADC codes never leave the core except inside a signature.
-2. \(n = \lfloor (r+w)/q \rfloor\) is computed in the core. The element signs that \(n\) or it signs nothing.
+2. \(T\) is computed in the core from the pulses. The element signs the record the core built or it signs nothing.
 3. Opening the enclosure zeroizes the key. A later signature from that key fails.
-4. \(W\) is monotone and chained. Replaying an old signature fails the chain. Skipping an interval fails the chain.
+4. The sequence number and the counters only increase. Replaying an old signature fails the sequence check. Losing a record loses nothing, because the next record is cumulative.
 
-A verifier accepts an issuance if and only if the signature verifies under the certified key, the schedule identity matches, and \(W\) extends the stored chain. Under those checks the holder cannot deny the core signed that integral. That is the hardware non-repudiation claim.
+A verifier accepts a record if and only if the signature verifies under the certified key, the calibration CRC matches the certificate, and the sequence number and counters advance. Under those checks the holder cannot deny the core signed that integral. That is the hardware non-repudiation claim.
 
 ## What this does not silently assume
 
-Energy through the sealed terminals is what the signature asserts. Forcing a current through those terminals produces a real integral; the core will sign it, because the integral is real. Net generation, as against a loop that returns the same energy, is a second measurement: a grid-side meter on the same terminals, sealed by the interconnection, whose signed \(w\) must match the generator meter inside the class tolerance. Issuance requires both signatures. One meter cannot mint alone.
+Energy through the sealed terminals is what the signature asserts. Forcing a current through those terminals produces a real integral, and the core will count it, because the integral is real. Two measurements close that gap.
 
-Software on the inverter, a rewritten host, and a database edit are not on that path. Those are the manipulations this binding is built to refuse.
+- The import register. Energy that comes in through the meter and goes back out nets to zero, so it does not raise the token count.
+- A second meter. A site has a GEN meter at the generator terminals and a GRID meter at the point of connection, each sealed, each with its own key, both certified as a pair. The ledger credits the pair with \(\min(T_{GEN}, T_{GRID})\). The GEN meter says the energy was generated; the GRID meter says it left the site, net of what came in. Because both counts are cumulative, the two meters never have to report the same interval, and a record that arrives late or not at all does not matter. One meter cannot mint alone.
+
+Software on the inverter, a rewritten host, and a database edit are not on that path. Those are the manipulations this binding is built to refuse. Opening the cover while the meter is unpowered is not yet refused; that is open item O-1 in [open-items.md](open-items.md).
 
 ## Sources
 

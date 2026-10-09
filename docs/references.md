@@ -79,3 +79,27 @@ Burleigh, S., Hooke, A., Torgerson, L., Fall, K., Cerf, V., Durst, B., & Scott, 
 Metzger, P. T., Muscatello, A., Mueller, R. P., & Mantovani, J. (2013). Affordable, rapid bootstrapping of the space industry and solar system civilization. *Journal of Aerospace Engineering*, 26(1), 18–29. https://doi.org/10.1061/(ASCE)AS.1943-5525.0000236
 
 Cited for local energy as a constraint on off-Earth industry, and for delay-tolerant links between regions.
+
+## v0.0.1 hardware and software
+
+Power Integrations. *LNK302/304-306 LinkSwitch-TN family datasheet*. Non-isolated off-line buck converter, 85–265 V ac.
+
+Infineon (Cypress). *FM25V02A 256-Kbit (32K × 8) serial (SPI) F-RAM datasheet*. 2.0–3.6 V, 40 MHz, 10¹⁴ read/write cycles.
+
+Texas Instruments. *LM2936 ultra-low quiescent current LDO voltage regulator datasheet*. 40 V input, 50 mA output.
+
+Analog Devices (Maxim Integrated). *DS3645 secure supervisor with battery-backed key memory and tamper detection*. Cited as the class of part that closes open item O-1.
+
+IEC 60664-1. Insulation coordination for equipment within low-voltage supply systems — Principles, requirements and tests. Creepage and clearance.
+
+SEALSQ. (2025). *QS7001 Quantum Shield* product announcements: RISC-V secure microcontroller with hardware ML-DSA and ML-KEM. The pin map and SDK are under the vendor's NDA; see open item O-3.
+
+Pope, G. *dilithium-py*: pure-Python ML-DSA (FIPS 204), used by the v0.0.1 devnet. https://github.com/GiacomoPope/dilithium-py
+
+## Prior art for energy-backed units
+
+SolarCoin Foundation. (2014). *SolarCoin*: a coin granted per verified MWh of solar generation.
+
+Mihaylov, M., Jurado, S., Avellana, N., Van Moffaert, K., de Abril, I. M., & Nowé, A. (2014). NRGcoin: Virtual currency for trading of renewable energy in smart grids. Cited above.
+
+S.A.F.E. e.V. *Open Charge Metering Format (OCMF)*: signed meter values for EV charging under German calibration law (Eichrecht).
