@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520">
+  <rect width="920" height="520" fill="#f7f4ee"/>
+  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">05 — Secure element</text>
+  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">Counts CF. Signs ML-DSA-44. Key does not leave the die. doc-0.7</text>
+  <rect x="280" y="90" width="320" height="280" fill="none" stroke="#111" stroke-width="1.6"/>
+  <text x="360" y="118" font-size="14">U3 secure element</text>
+  <text x="298" y="150" font-size="12">CF_IN  wake</text>
+  <text x="298" y="174" font-size="12">ZEROIZE active low</text>
+  <text x="298" y="198" font-size="12">Vdd 3.3 V</text>
+  <text x="298" y="222" font-size="12">GND</text>
+  <text x="470" y="150" font-size="12">TX signed record</text>
+  <text x="470" y="174" font-size="12">RX unused</text>
+  <text x="298" y="270" font-size="12">on-die counter r, W</text>
+  <text x="298" y="294" font-size="12">n = floor((r+w)/q)</text>
+  <text x="298" y="318" font-size="12">ML-DSA-44 engine</text>
+  <text x="298" y="342" font-size="12">sleep between edges</text>
+  <line x1="60" y1="144" x2="280" y2="144" stroke="#111" stroke-width="1.6"/>
+  <text x="64" y="136" font-size="11">CF</text>
+  <line x1="600" y1="144" x2="820" y2="144" stroke="#111" stroke-width="1.6"/>
+  <text x="740" y="136" font-size="11">to radio</text>
+  <line x1="200" y1="168" x2="280" y2="168" stroke="#a33" stroke-width="1.6"/>
+  <text x="64" y="172" font-size="11" fill="#a33">tamper</text>
+  <text x="24" y="410" font-size="13">q = 1000 Wh, so 1000 CF edges mint one token. Residual r stays in the element.</text>
+  <text x="24" y="432" font-size="13">Sign energy is on the order of 20 mJ, then the die returns to sleep.</text>
+  <text x="24" y="454" font-size="13">ZEROIZE tied to the mesh. Open mesh drops the pin and erases sk.</text>
+  <text x="24" y="490" font-size="12" fill="#444">No instruction flash on this sheet. The schedule is the element’s fixed function.</text>
+</svg>

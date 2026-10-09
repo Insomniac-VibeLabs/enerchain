@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520">
+  <rect width="920" height="520" fill="#f7f4ee"/>
+  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">04 — Metrology core</text>
+  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">Fixed-function energy IC. CF is one pulse per watt-hour. doc-0.7</text>
+  <rect x="300" y="100" width="280" height="250" fill="none" stroke="#111" stroke-width="1.6"/>
+  <text x="360" y="128" font-size="14">U2 metrology ASIC</text>
+  <text x="318" y="160" font-size="12">I+ / I−</text>
+  <text x="318" y="184" font-size="12">V+ / V−</text>
+  <text x="318" y="208" font-size="12">REF</text>
+  <text x="318" y="232" font-size="12">XIN / XOUT</text>
+  <text x="318" y="256" font-size="12">DVDD / DGND</text>
+  <text x="470" y="160" font-size="12">CF</text>
+  <text x="470" y="184" font-size="12">IRQ</text>
+  <text x="470" y="208" font-size="12">no host SPI</text>
+  <line x1="80" y1="154" x2="300" y2="154" stroke="#111"/>
+  <text x="84" y="146" font-size="11">shunt sense</text>
+  <line x1="80" y1="178" x2="300" y2="178" stroke="#111"/>
+  <text x="84" y="170" font-size="11">divider</text>
+  <line x1="580" y1="154" x2="760" y2="154" stroke="#111" stroke-width="1.6"/>
+  <text x="680" y="146" font-size="12">CF → element</text>
+  <rect x="250" y="300" width="28" height="16" fill="none" stroke="#111"/>
+  <line x1="264" y1="300" x2="264" y2="232" stroke="#111"/>
+  <line x1="278" y1="300" x2="278" y2="250" stroke="#111"/>
+  <text x="200" y="328" font-size="11">Y1 16.384 MHz</text>
+  <line x1="420" y1="256" x2="420" y2="360" stroke="#111"/>
+  <line x1="412" y1="360" x2="428" y2="360" stroke="#111"/>
+  <line x1="416" y1="366" x2="424" y2="366" stroke="#111"/>
+  <text x="436" y="364" font-size="11">100 nF</text>
+  <text x="24" y="400" font-size="13">Meter constant K = 1000 imp/kWh, so one CF edge is 1 Wh.</text>
+  <text x="24" y="422" font-size="13">The ASIC accumulates Σ v[n] i[n] Δt. CF is the only data output. SPI is unbonded.</text>
+  <text x="24" y="444" font-size="13">Active draw of this class of IC is tens of milliwatts, inside the 2 W cap.</text>
+  <text x="24" y="480" font-size="12" fill="#444">Pin names match a polyphase energy-measurement IC of the ADE9078 class. This sheet is not that vendor’s board.</text>
+</svg>

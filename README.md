@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Edition: doc-0.6 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
+Edition: doc-0.7 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -48,6 +48,7 @@ Start with [docs/how-to.md](docs/how-to.md). The claim itself is in [docs/hypoth
 | [Ledger nonrepudiation](docs/ledger-nonrepudiation.md) | How does that signature become a public, quantum-resistant record? |
 | [Meter burden](docs/meter-burden.md) | How little electricity may the mint path use? |
 | [Schematic](docs/schematics/mint-path.svg) | Hardware-only mint path. |
+| [Circuit sheets](docs/schematics/README.md) | IEC-symbol circuits for each block. |
 | [Economics](docs/economics.md) | Who generates, and how do regions trade? |
 | [Interplanetary economics](docs/interplanetary-economics.md) | What does a planetary region prove? |
 | [Governance](docs/governance.md) | Who may change the rules? |

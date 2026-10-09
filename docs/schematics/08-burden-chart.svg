@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="420" viewBox="0 0 920 420">
+  <rect width="920" height="420" fill="#f7f4ee"/>
+  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">08 — Burden chart</text>
+  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">Average draw against the 2 W cap. doc-0.7</text>
+  <line x1="160" y1="80" x2="160" y2="320" stroke="#111"/>
+  <line x1="160" y1="320" x2="860" y2="320" stroke="#111"/>
+  <text x="40" y="84" font-size="11">2.0 W</text>
+  <text x="40" y="204" font-size="11">1.0 W</text>
+  <text x="40" y="324" font-size="11">0</text>
+  <line x1="160" y1="80" x2="860" y2="80" stroke="#a33" stroke-dasharray="4 3"/>
+  <text x="760" y="74" font-size="11" fill="#a33">IEC cap</text>
+  <rect x="200" y="300" width="70" height="20" fill="#3d5a40"/>
+  <text x="196" y="344" font-size="11">supply</text>
+  <text x="200" y="292" font-size="10">0.2 W</text>
+  <rect x="320" y="304" width="70" height="16" fill="#3d5a40"/>
+  <text x="316" y="344" font-size="11">shunt</text>
+  <text x="320" y="296" font-size="10">0.16 W</text>
+  <rect x="440" y="312" width="70" height="8" fill="#3d5a40"/>
+  <text x="436" y="344" font-size="11">divider</text>
+  <text x="440" y="304" font-size="10">0.06 W</text>
+  <rect x="560" y="308" width="70" height="12" fill="#3d5a40"/>
+  <text x="548" y="344" font-size="11">metrology</text>
+  <text x="560" y="300" font-size="10">0.05 W</text>
+  <rect x="680" y="316" width="70" height="4" fill="#3d5a40"/>
+  <text x="688" y="344" font-size="11">sign</text>
+  <text x="676" y="308" font-size="10">~0 W avg</text>
+  <text x="24" y="380" font-size="13">Sum of the continuous terms is about 0.5 W, under the 1.5 W field-meter target and under the 2 W cap.</text>
+  <text x="24" y="402" font-size="13">Sign and radio are millijoules per token, not watts. They do not move the bar.</text>
+</svg>

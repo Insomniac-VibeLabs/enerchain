@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="500" viewBox="0 0 920 500">
+  <rect width="920" height="500" fill="#f7f4ee"/>
+  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">03 — Voltage divider</text>
+  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">IEC resistors and capacitor. Differential to the voltage ADC. doc-0.7</text>
+  <line x1="80" y1="100" x2="80" y2="150" stroke="#111" stroke-width="1.6"/>
+  <text x="88" y="116" font-size="12">L</text>
+  <rect x="62" y="150" width="36" height="22" fill="none" stroke="#111"/>
+  <text x="70" y="166" font-size="11">R1a</text>
+  <line x1="80" y1="172" x2="80" y2="200" stroke="#111"/>
+  <rect x="62" y="200" width="36" height="22" fill="none" stroke="#111"/>
+  <text x="70" y="216" font-size="11">R1b</text>
+  <line x1="80" y1="222" x2="80" y2="260" stroke="#111"/>
+  <line x1="80" y1="260" x2="200" y2="260" stroke="#111"/>
+  <text x="140" y="252" font-size="11">V+</text>
+  <rect x="62" y="260" width="36" height="22" fill="none" stroke="#111"/>
+  <text x="70" y="276" font-size="11">R2</text>
+  <line x1="80" y1="282" x2="80" y2="340" stroke="#111"/>
+  <line x1="40" y1="340" x2="160" y2="340" stroke="#111" stroke-width="1.6"/>
+  <text x="44" y="332" font-size="12">N</text>
+  <line x1="200" y1="260" x2="280" y2="260" stroke="#111"/>
+  <line x1="280" y1="248" x2="280" y2="272" stroke="#111"/>
+  <line x1="288" y1="248" x2="288" y2="272" stroke="#111"/>
+  <text x="296" y="256" font-size="11">C4 1 nF</text>
+  <line x1="288" y1="260" x2="360" y2="260" stroke="#111"/>
+  <rect x="360" y="230" width="180" height="70" fill="none" stroke="#111"/>
+  <text x="376" y="258" font-size="12">metrology V+/V−</text>
+  <text x="376" y="278" font-size="12">full scale 0.5 V rms</text>
+  <text x="24" y="390" font-size="13">R1a = R1b = 499 kΩ, series, each rated ≥ 200 V. R2 = 2.08 kΩ.</text>
+  <text x="24" y="412" font-size="13">Divider k = R2/(R1a+R1b+R2) ≈ 1/481. At 240 V rms, v_adc ≈ 0.50 V rms.</text>
+  <text x="24" y="434" font-size="13">Dissipation in R1 = V²/R1 ≈ 0.058 W. C4 with R2 sets the anti-alias pole near 76 kHz.</text>
+</svg>

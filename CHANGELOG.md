@@ -10,5 +10,6 @@ Enerchain has no software release. Documentation editions use the `doc-` prefix 
 | doc-0.4 | 2026-10-08 | Added hardware binding of the energy integral to token issuance. Confirmed the token is proof of generation, not a physical export. |
 | doc-0.5 | 2026-10-08 | Added public-ledger nonrepudiation, NIST post-quantum signatures, a fixed block cap, no difficulty parameter, and uncapped supply. |
 | doc-0.6 | 2026-10-08 | Capped mint-path draw at a present-day meter. Switched the meter key to ML-DSA-44. Added the hardware-only schematic. |
+| doc-0.7 | 2026-10-08 | Split the mint path into IEC-symbol circuit sheets and a burden chart. |
 
-Software release tags, when they exist, must not be used as documentation edition numbers. Cite a document as `path@doc-0.6` until a later edition supersedes it.
+Software release tags, when they exist, must not be used as documentation edition numbers. Cite a document as `path@doc-0.7` until a later edition supersedes it.

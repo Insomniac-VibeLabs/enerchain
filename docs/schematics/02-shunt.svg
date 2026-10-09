@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="480" viewBox="0 0 920 480">
+  <rect width="920" height="480" fill="#f7f4ee"/>
+  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">02 — Current shunt, Kelvin sense</text>
+  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">IEC rectangle resistor. Four-terminal shunt. doc-0.7</text>
+  <line x1="40" y1="140" x2="160" y2="140" stroke="#111" stroke-width="2"/>
+  <text x="44" y="128" font-size="12">from L</text>
+  <rect x="160" y="124" width="80" height="32" fill="none" stroke="#111" stroke-width="1.6"/>
+  <text x="178" y="144" font-size="12">R_s</text>
+  <line x1="240" y1="140" x2="360" y2="140" stroke="#111" stroke-width="2"/>
+  <text x="300" y="128" font-size="12">to grid</text>
+  <line x1="176" y1="156" x2="176" y2="230" stroke="#111"/>
+  <line x1="224" y1="156" x2="224" y2="230" stroke="#111"/>
+  <text x="168" y="222" font-size="10">S+</text>
+  <text x="214" y="222" font-size="10">S−</text>
+  <line x1="176" y1="230" x2="420" y2="230" stroke="#111"/>
+  <line x1="224" y1="230" x2="420" y2="270" stroke="#111"/>
+  <rect x="420" y="200" width="200" height="100" fill="none" stroke="#111"/>
+  <text x="436" y="228" font-size="12">metrology I+/I−</text>
+  <text x="436" y="250" font-size="12">PGA, gain 16</text>
+  <text x="436" y="272" font-size="12">anti-alias on chip</text>
+  <text x="24" y="340" font-size="13">R_s = 100 µΩ manganin. At 40 A, v = IR = 4.0 mV, P = I²R = 0.16 W.</text>
+  <text x="24" y="362" font-size="13">IEC current-circuit limit is 1 VA at nominal current. 0.16 W at 40 A is inside that.</text>
+  <text x="24" y="384" font-size="13">Sense traces leave the element at the kelvin nodes, not at the bus bars.</text>
+  <text x="24" y="420" font-size="12" fill="#444">Force path is the heavy line. Sense path is the pair into the current ADC. Do not share copper.</text>
+</svg>

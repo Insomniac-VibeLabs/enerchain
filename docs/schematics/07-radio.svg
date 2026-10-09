@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="500" viewBox="0 0 920 500">
+  <rect width="920" height="500" fill="#f7f4ee"/>
+  <text x="24" y="32" font-family="ui-sans-serif,sans-serif" font-size="16" fill="#1a1a1a">07 — Slept radio</text>
+  <text x="24" y="52" font-family="ui-sans-serif,sans-serif" font-size="12" fill="#444">Forwards a signed record, then returns to sleep. doc-0.7</text>
+  <line x1="40" y1="140" x2="180" y2="140" stroke="#111"/>
+  <text x="44" y="128" font-size="12">from element TX</text>
+  <rect x="180" y="110" width="200" height="80" fill="none" stroke="#111"/>
+  <text x="210" y="142" font-size="13">U4 2.4 GHz radio</text>
+  <text x="210" y="164" font-size="12">sleep until TX edge</text>
+  <line x1="380" y1="150" x2="460" y2="150" stroke="#111"/>
+  <line x1="460" y1="130" x2="500" y2="130" stroke="#111"/>
+  <line x1="460" y1="170" x2="500" y2="170" stroke="#111"/>
+  <rect x="500" y="122" width="28" height="16" fill="none" stroke="#111"/>
+  <text x="508" y="134" font-size="10">L1</text>
+  <rect x="500" y="162" width="28" height="16" fill="none" stroke="#111"/>
+  <text x="508" y="174" font-size="10">C5</text>
+  <line x1="528" y1="130" x2="620" y2="150" stroke="#111"/>
+  <line x1="528" y1="170" x2="620" y2="150" stroke="#111"/>
+  <polygon points="620,150 700,120 700,180" fill="none" stroke="#111"/>
+  <text x="708" y="154" font-size="12">antenna</text>
+  <text x="24" y="250" font-size="13">Pi match is L1 with C5 to ground at the antenna feed. Values follow the module datasheet.</text>
+  <text x="24" y="272" font-size="13">10 mW for 100 ms is 1 mJ per posting. Radio current is zero between tokens.</text>
+  <text x="24" y="294" font-size="13">Payload is the signed record only. The radio has no key and cannot mint.</text>
+  <text x="24" y="340" font-size="13">Duty: one burst per token, not a beacon.</text>
+  <text x="24" y="400" font-size="12" fill="#444">Symbol set: IEC resistor/capacitor style for the match, antenna as a tapered radiator.</text>
+</svg>
