@@ -52,4 +52,4 @@ The meter contains a secure element, a unique identity, a private key that does 
 
 ## Schedule
 
-doc-0.3 uses a one-to-one baseline: one coin per accepted kilowatt-hour. A later edition can change the schedule. It cannot change the rule that the element will not sign above the schedule.
+The construction, the error bound, and the two-register schedule are specified in [hardware-binding.md](hardware-binding.md).

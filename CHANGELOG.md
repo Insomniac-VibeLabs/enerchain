@@ -7,5 +7,6 @@ Enerchain has no software release. Documentation editions use the `doc-` prefix 
 | doc-0.1 | 2026-10-08 | Initial concept notes. |
 | doc-0.2 | 2026-10-08 | Layered rewrite with citations. |
 | doc-0.3 | 2026-10-08 | Removed the doc-0.2 non-claims. Concept set restated around the electricity-currency hypothesis, hardware-locked issuance, and regional-to-planetary trade. |
+| doc-0.4 | 2026-10-08 | Added hardware binding of the energy integral to token issuance. Confirmed the token is proof of generation, not a physical export. |
 
-Software release tags, when they exist, must not be used as documentation edition numbers. Cite a document as `path@doc-0.3` until a later edition supersedes it.
+Software release tags, when they exist, must not be used as documentation edition numbers. Cite a document as `path@doc-0.4` until a later edition supersedes it.

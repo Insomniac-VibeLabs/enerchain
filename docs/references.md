@@ -42,9 +42,17 @@ Tan, Z., Cheng, T., Liu, Y., & Zhong, H. (2022). Extensions of the locational ma
 
 Locational price is the published form of regional electricity trade on Earth.
 
-## Metering
+## Metering and hardware binding
 
 International Electrotechnical Commission. (2020). *IEC 62053-22: Electricity metering equipment — Particular requirements — Static meters for AC active energy (classes 0.1S, 0.2S and 0.5S)*. Geneva: IEC.
+
+International Organization of Legal Metrology. (2012). *OIML R 46-1/-2: Active electrical energy meters*. Paris: OIML.
+
+WELMEC. *Guide 7.2: Software Guide* (Measuring Instruments Directive 2014/32/EU). Section on active electrical energy meters. https://www.welmec.org/welmec/documents/guides/7.2/2025/WELMEC_Guide_7.2_2025.pdf
+
+Rincón, A. E. R., Melo Jr., W. S., Farias, C. M., & Carmo, L. F. R. C. (2021). Securing smart meters through physical properties of their components. *IEEE Transactions on Instrumentation and Measurement*, 70, 3000511. https://doi.org/10.1109/TIM.2020.3041098
+
+The integral, the token schedule, and the sealed core are specified in [hardware-binding.md](hardware-binding.md).
 
 ## Interplanetary links and local energy
 

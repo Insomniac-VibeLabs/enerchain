@@ -1,12 +1,10 @@
 # Interplanetary economics
 
-Edition: doc-0.3 (2026-10-08).
+Edition: doc-0.4 (2026-10-08).
 
 ## Plain language
 
-Grids trade power between regions today. The proposal is that this does not stop at a border. A settlement on the Moon, on Mars, in orbit, or in another system is another region. The trade good stays electricity: a unit minted from measured generation, transferable on a public ledger.
-
-A watt-hour is a watt-hour in every region. The local price does not have to match.
+Regions trade the token, not the electrons. A settlement on the Moon, on Mars, in orbit, or in another system is another region. The token is proof that generation was measured there. It is not a physical export of electricity. A watt-hour is a watt-hour in every region. The local price does not have to match.
 
 ## From feeder to system
 
