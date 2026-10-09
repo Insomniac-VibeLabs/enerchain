@@ -1,28 +1,30 @@
 # Governance
 
-Enerchain should pursue decentralized governance whenever technically and economically feasible.
+Edition: doc-0.2 (2026-10-08).
 
-The project must balance:
+## Plain language
 
-- Security
-- Scalability
-- Energy Integrity
-- Decentralization
+No single company should be able to decide, alone, which meters are real and how many units a reading creates. Some decisions still need a high bar, because a bad meter rule counterfeits the currency.
 
----
+## Technical statement
 
-## Governance Subjects
+Enerchain governance is the set of rules for changing issuance, meter certification, validator admission, and protocol upgrades. Decentralization is a constraint, not a slogan: a certification authority that can whitelist every meter can also halt issuance. A system with no certification admits cloned meters.
 
-The community may eventually govern:
+The design has to hold four properties at once, and they trade off:
 
-- Issuance policies
-- Meter certification requirements
-- Validator requirements
-- Protocol upgrades
-- Network security standards
+- Security of the measurement.
+- Scalability of verification.
+- Integrity of the watt-hour claim.
+- Absence of a unilateral controller.
 
----
+Subjects a future community may govern:
 
-## Principle
+- The issuance function, including any change to units per accepted kilowatt-hour.
+- Meter certification and revocation.
+- Validator requirements.
+- Upgrade procedure.
+- The exclusivity rule against certificate registries [Gillenwater 2008].
 
-No single organization should possess unilateral control over energy verification or currency issuance.
+Principle, unchanged from the initial notes: no single organization should possess unilateral control over energy verification or currency issuance.
+
+Practical reading of that principle: certification and revocation must be multi-party and publicly logged. A manufacturer can build a meter. A manufacturer cannot be the only party whose signature makes a reading mint. Regulatory reality may force a utility or a state into the set of parties [Mengelkamp et al. 2018]. That is a constraint to design for, not a reason to pretend the state is absent.

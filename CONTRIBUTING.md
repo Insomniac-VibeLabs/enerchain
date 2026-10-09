@@ -1,38 +1,35 @@
 # Contributing to Enerchain
 
-Thank you for your interest in Enerchain.
+Edition: doc-0.2 (2026-10-08).
 
-The project is currently focused on research, economic modeling, cryptographic design, and energy verification mechanisms.
+Thank you for working on Enerchain. The repository is research: economic modeling, cryptographic design, and energy-verification mechanisms. It is not a network.
 
-We welcome contributions in:
+Useful backgrounds:
 
-- Electrical Engineering
-- Power Systems
-- Cryptography
-- Distributed Systems
-- Blockchain Research
-- Energy Economics
-- Energy Policy
-- Security Analysis
+- Electrical engineering and power systems
+- Cryptography and distributed systems
+- Energy economics and energy policy
+- Security analysis of metering
 
----
+## Process
 
-## Contribution Process
+1. Read [docs/how-to.md](docs/how-to.md).
+2. Fork and branch.
+3. Open a pull request that says whether it clarifies a claim or changes one.
+4. If the claim changes, add a `doc-` row to [CHANGELOG.md](CHANGELOG.md). Do not use a `v` tag for a document edition. Software releases, when they exist, increment on their own and must not be the citation for a document.
+5. Update [README.md](README.md) and this file if the reading order or the research areas change.
+6. Remove the superseded wording in the same change. Do not leave two explanations.
 
-1. Fork repository
-2. Create branch
-3. Submit pull request
-4. Participate in discussion
+## Research areas
 
----
+- Proof of Generation as evidence, not as consensus
+- Meter security and fraud
+- Distributed energy markets and exclusivity with certificate registries
+- Issuance functions that do not assume a fixed price
+- Delay-tolerant settlement for the interplanetary case
 
-## Primary Research Areas
+Design changes should prefer transparency, verifiability, and the absence of a unilateral issuer. A change that cannot name a source, a standard, or a stated assumption does not belong in the concept documents.
 
-- Proof of Generation
-- Meter Security
-- Fraud Prevention
-- Distributed Energy Markets
-- Consensus Mechanisms
-- Interplanetary Economics
+## Sources
 
-All major design decisions should prioritize transparency, verifiability, and decentralization.
+Peer-reviewed work and formal standards outrank blog posts and token marketing. Add new sources to [docs/references.md](docs/references.md) with author, year, venue, and a stable identifier. Do not cite a source you have not opened.
