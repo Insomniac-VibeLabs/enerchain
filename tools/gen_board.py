@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EC-SEAL1 fabrication artwork, doc-1.1.
+"""EC-SEAL1 fabrication artwork, v0.0.1 (doc-1.2, board revision B).
 
 The release is the land pattern, the mains and analog pours, the netlist,
 and the centroid. QFN fanout is not maze-routed: a 0.25 mm grid cannot
@@ -9,6 +9,7 @@ is not a deliverable. See hardware/fab/ec-seal1/MANUFACTURER.md.
 from __future__ import annotations
 
 import collections
+import csv
 import math
 import os
 from PIL import Image, ImageDraw
@@ -21,8 +22,9 @@ GW, GH = 100.0, 70.0
 CELL = 0.25
 NX, NY = int(GW / CELL), int(GH / CELL)
 
-# Logic ground and Neutral are one net. The inner ground plane is that
-# net, and it starts at x = 46 so it never sits under the line copper.
+# Logic ground is Line on the grid side of the shunt (net GND). The inner
+# ground plane is that net, and it starts at x = 46 so it never sits under
+# the Neutral-referenced mains copper.
 PADS = []
 PARTS = []
 
@@ -42,64 +44,110 @@ def p(name, dx, dy, w, h, net, drill=0):
 
 
 # --- mains, left of the plane -------------------------------------------
+# v0.0.1 (doc-1.2). Logic ground is the LINE conductor on the grid side of
+# the shunt, so both STPM32 current inputs sit within millivolts of ground.
+# doc-1.1 tied ground to Neutral while the shunt sat in Line, which put the
+# current inputs at full mains voltage. The voltage divider now hangs from
+# Neutral, and the supply is an LNK304 buck referenced to Line.
+#
 # Studs. Pad copper is the 6 mm ring flashed from the drill list.
 add_part("H1", "M3 grid line", "terminal", "hole-3.2", 16, 60, 0, [
-    p("1", 0, 0, 6.0, 6.0, "L_GRID", 3.2),
+    p("1", 0, 0, 6.0, 6.0, "GND", 3.2),
 ])
 add_part("H2", "M3 generator line", "terminal", "hole-3.2", 16, 46, 0, [
     p("1", 0, 0, 6.0, 6.0, "L_GEN", 3.2),
 ])
 add_part("H3", "M3 neutral", "terminal", "hole-3.2", 12, 32, 0, [
-    p("1", 0, 0, 6.0, 6.0, "GND", 3.2),
+    p("1", 0, 0, 6.0, 6.0, "N", 3.2),
 ])
 # Shunt, rot 90: force pads land on the left, sense pads on the right.
+# SG is the generator-side Kelvin pad, SI the grid-side Kelvin pad.
 add_part("RS", "100 uohm", "Vishay WSBS5216L1000JT", "shunt-5216", 24, 52, 90, [
     p("FG", -6.0, 1.2, 2.4, 2.0, "L_GEN", 0),
     p("SG", -6.0, -1.2, 1.4, 1.4, "IIN_F", 0),
-    p("IG", 6.0, 1.2, 2.4, 2.0, "L_GRID", 0),
+    p("IG", 6.0, 1.2, 2.4, 2.0, "GND", 0),
     p("SI", 6.0, -1.2, 1.4, 1.4, "IIP_F", 0),
 ])
-# Fuse is the supply tap, not the 40 A path. Pin 1 sits in the L_GRID pour.
-add_part("F1", "100 mA T 5x20", "Littelfuse 0215.100HXP", "fuse-5x20", 30, 65.2, 0, [
-    p("1", -10, 0, 2.2, 2.2, "L_GRID", 1.2),
-    p("2", 10, 0, 2.2, 2.2, "L_FUSED", 1.2),
+# Supply input: fuse in the Neutral leg, MOV across Neutral and Line.
+add_part("F1", "250 mA T 5x20", "Littelfuse 0215.250HXP", "fuse-5x20", 28, 38, 0, [
+    p("1", -10, 0, 2.2, 2.2, "N", 1.2),
+    p("2", 10, 0, 2.2, 2.2, "N_F", 1.2),
 ])
-add_part("RV1", "275 VAC", "Bourns MOV-10D431K", "disc-10", 36, 54, 0, [
-    p("1", -2.5, 0, 1.8, 1.8, "L_FUSED", 0.9),
+add_part("RV1", "275 VAC", "Bourns MOV-10D431K", "disc-10", 45, 33, 0, [
+    p("1", -2.5, 0, 1.8, 1.8, "N_F", 0.9),
     p("2", 2.5, 0, 1.8, 1.8, "GND", 0.9),
 ])
-# X2 standing up, so a left-edge gutter can pass beside it.
-add_part("C1", "330 nF X2", "TDK B32922C3334K", "box-22.5", 36, 28, 90, [
-    p("1", -11.25, 0, 2.0, 2.0, "DROP", 1.1),
-    p("2", 11.25, 0, 2.0, 2.0, "L_FUSED", 1.1),
+add_part("R1", "10 ohm anti-surge", "Panasonic ERJ-P08J100V", "1206", 42.5, 25, 90, [
+    p("1", 1.6, 0, 1.0, 1.2, "N_F", 0),
+    p("2", -1.6, 0, 1.0, 1.2, "N_R", 0),
 ])
-add_part("R1", "1 M 700 V", "Vishay TNPV12061M00BEEN", "1206", 27, 36, 0, [
-    p("1", -1.6, 0, 1.0, 1.2, "L_FUSED", 0),
-    p("2", 1.6, 0, 1.0, 1.2, "BLEED", 0),
+add_part("D1", "1000 V", "Diodes S1M-13-F", "SMA", 42.5, 19, 90, [
+    p("A", 2.0, 0, 1.4, 1.4, "N_R", 0),
+    p("K", -2.0, 0, 1.4, 1.4, "VB1", 0),
 ])
-add_part("R2", "1 M 700 V", "Vishay TNPV12061M00BEEN", "1206", 27, 20, 0, [
-    p("1", -1.6, 0, 1.0, 1.2, "BLEED", 0),
-    p("2", 1.6, 0, 1.0, 1.2, "DROP", 0),
+add_part("C1", "4.7 uF 400 V", "Nichicon UVY2G4R7MPD", "rad-10", 31, 13.5, 90, [
+    p("+", 2.5, 0, 1.6, 1.6, "VB1", 0.8),
+    p("-", -2.5, 0, 1.6, 1.6, "GND", 0.8),
 ])
-add_part("R3", "100 ohm 0.5 W", "Panasonic ERJ-P08J101V", "1206", 26, 16, 0, [
-    p("1", -1.6, 0, 1.0, 1.2, "DROP", 0),
-    p("2", 1.6, 0, 1.0, 1.2, "RECT_AC", 0),
+add_part("L1", "1 mH", "Bourns RLB0914-102KL", "rad-9.5", 24, 28.5, 0, [
+    p("1", -2.5, 0, 1.8, 1.8, "VB1", 0.9),
+    p("2", 2.5, 0, 1.8, 1.8, "VBULK", 0.9),
 ])
-add_part("D1", "1000 V", "Diodes S1M-13-F", "SMA", 26, 24, 0, [
-    p("A", -2.0, 0, 1.4, 1.4, "RECT_AC", 0),
-    p("K", 2.0, 0, 1.4, 1.4, "GND", 0),
+add_part("C16", "4.7 uF 400 V", "Nichicon UVY2G4R7MPD", "rad-10", 20.5, 13.5, 90, [
+    p("+", 2.5, 0, 1.6, 1.6, "VBULK", 0.8),
+    p("-", -2.5, 0, 1.6, 1.6, "GND", 0.8),
 ])
-add_part("D2", "1000 V", "Diodes S1M-13-F", "SMA", 26, 32, 0, [
-    p("A", -2.0, 0, 1.4, 1.4, "RECT_AC", 0),
-    p("K", 2.0, 0, 1.4, 1.4, "VRECT", 0),
+# LNK304DG, SO-8C (pin 3 removed). BP 1, FB 2, D 4, S 5-8. Source is the
+# switch node; the IC and its feedback ride on it.
+add_part("U5", "offline buck", "Power Integrations LNK304DG-TL", "SO-8", 33.5, 28.5, 0, [
+    p("BP", -2.7, 1.905, 1.5, 0.6, "BP", 0),
+    p("FB", -2.7, 0.635, 1.5, 0.6, "FB", 0),
+    p("D", -2.7, -1.905, 1.5, 0.6, "VBULK", 0),
+    p("S5", 2.7, -1.905, 1.5, 0.6, "SW", 0),
+    p("S6", 2.7, -0.635, 1.5, 0.6, "SW", 0),
+    p("S7", 2.7, 0.635, 1.5, 0.6, "SW", 0),
+    p("S8", 2.7, 1.905, 1.5, 0.6, "SW", 0),
 ])
-add_part("Z1", "12 V 500 mW", "Diodes BZT52C12-7-F", "SOD-123", 50, 58, 0, [
+add_part("D3", "600 V ultrafast", "onsemi ES1J", "SMA", 36, 21.5, 0, [
+    p("K", -2.0, 0, 1.4, 1.4, "SW", 0),
+    p("A", 2.0, 0, 1.4, 1.4, "GND", 0),
+])
+add_part("L2", "1 mH", "Bourns RLB0914-102KL", "rad-9.5", 36, 46, 0, [
+    p("1", -2.5, 0, 1.8, 1.8, "SW", 0.9),
+    p("2", 2.5, 0, 1.8, 1.8, "VRECT", 0.9),
+])
+add_part("C17", "100 nF", "Murata GRM188R71H104KA93", "0603", 30.5, 33.5, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "BP", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "SW", 0),
+])
+add_part("R2", "13.0 k", "Yageo RC0603FR-0713KL", "0603", 34, 33.5, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "FBC", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "FB", 0),
+])
+add_part("R3", "2.05 k", "Yageo RC0603FR-072K05L", "0603", 37, 33.5, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "FB", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "SW", 0),
+])
+add_part("D2", "1000 V", "Diodes S1M-13-F", "SMA", 36, 54, 0, [
+    p("A", -2.0, 0, 1.4, 1.4, "VRECT", 0),
+    p("K", 2.0, 0, 1.4, 1.4, "FBC", 0),
+])
+add_part("C18", "10 uF 25 V", "Murata GRM31CR71E106KA12L", "1206", 41, 57, 0, [
+    p("1", -1.6, 0, 1.0, 1.2, "FBC", 0),
+    p("2", 1.6, 0, 1.0, 1.2, "SW", 0),
+])
+# 12 V rail, logic side of the plane cut.
+add_part("Z1", "15 V 500 mW", "Diodes BZT52C15-7-F", "SOD-123", 50, 58, 0, [
     p("A", -1.6, 0, 0.8, 1.0, "GND", 0),
     p("K", 1.6, 0, 0.8, 1.0, "VRECT", 0),
 ])
-add_part("C2", "470 uF 16 V", "Panasonic EEE-FK1C471P", "rad-8", 52, 50, 0, [
-    p("+", -1.5, 0, 1.6, 1.6, "VRECT", 0.8),
-    p("-", 1.5, 0, 1.6, 1.6, "GND", 0.8),
+add_part("C2", "470 uF 25 V", "Panasonic EEE-FK1E471P", "rad-10", 52, 50, 0, [
+    p("+", -2.5, 0, 1.6, 1.6, "VRECT", 0.8),
+    p("-", 2.5, 0, 1.6, 1.6, "GND", 0.8),
+])
+add_part("R27", "3.3 k preload", "Yageo RC0603FR-073K3L", "0603", 56, 56, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "VRECT", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "GND", 0),
 ])
 add_part("U1", "3.3 V LDO", "TI LM2936MP-3.3/NOPB", "SOT-223", 62, 58, 0, [
     p("IN", -3.2, 1.5, 1.2, 1.4, "VRECT", 0),
@@ -115,24 +163,26 @@ add_part("C4", "100 nF", "Murata GRM188R71H104KA93", "0603", 58, 50, 0, [
     p("1", -0.7, 0, 0.7, 0.8, "VRECT", 0),
     p("2", 0.7, 0, 0.7, 0.8, "GND", 0),
 ])
-# Divider. Four 499 k, then 1.00 k. 240 V rms -> 0.120 V rms.
+# Divider from Neutral. Four 499 k, then 1.00 k to ground (Line).
+# 240 V rms -> 0.120 V rms on VIP; the pin sees -v_LN, and the current
+# inputs are wired so the product is positive for export.
 for i, name in enumerate(("R4", "R5", "R6", "R7")):
-    n0 = "L_GRID" if i == 0 else f"VD{i}"
+    n0 = "N" if i == 0 else f"VD{i}"
     n1 = f"VD{i+1}" if i < 3 else "VIP_S"
     add_part(name, "499 k 0.1% 700 V", "Vishay TNPV1206499KBEEN", "1206",
-             20 + i * 7, 10, 0, [
+             20 + i * 7, 7, 0, [
                  p("1", -1.6, 0, 1.0, 1.2, n0, 0),
                  p("2", 1.6, 0, 1.0, 1.2, n1, 0),
              ])
-add_part("R8", "1.00 k 0.1%", "Vishay TNPW06031K00BEEA", "0603", 50, 16, 0, [
+add_part("R8", "1.00 k 0.1%", "Vishay TNPW06031K00BEEA", "0603", 50, 7, 0, [
     p("1", -0.8, 0, 0.7, 0.8, "VIP_S", 0),
     p("2", 0.8, 0, 0.7, 0.8, "GND", 0),
 ])
-add_part("C5", "10 nF C0G", "KEMET C0603C103J3GACTU", "0603", 50, 12, 90, [
+add_part("C5", "10 nF C0G", "KEMET C0603C103J3GACTU", "0603", 53, 9.5, 90, [
     p("1", -0.8, 0, 0.7, 0.8, "VIP_S", 0),
     p("2", 0.8, 0, 0.7, 0.8, "GND", 0),
 ])
-add_part("R9", "1.00 k", "Vishay TNPW06031K00BEEA", "0603", 56, 16, 0, [
+add_part("R9", "1.00 k", "Vishay TNPW06031K00BEEA", "0603", 56, 7, 0, [
     p("1", -0.8, 0, 0.7, 0.8, "VIP_S", 0),
     p("2", 0.8, 0, 0.7, 0.8, "VIP", 0),
 ])
@@ -152,8 +202,9 @@ add_part("C6", "10 nF C0G", "KEMET C0603C103J3GACTU", "0603", 60, 32, 90, [
     p("1", -0.8, 0, 0.7, 0.8, "IIP", 0),
     p("2", 0.8, 0, 0.7, 0.8, "IIN", 0),
 ])
-# One via where Neutral enters the inner ground plane.
-add_part("TV1", "neutral tie", "via-0.30", "via", 48, 5, 0, [
+# One via where ground (Line) enters the inner ground plane, at the end
+# of the top-edge strip from the grid stud.
+add_part("TV1", "ground tie", "via-0.30", "via", 48, 66.5, 0, [
     p("1", 0, 0, 0.60, 0.60, "GND", 0.30),
 ])
 
@@ -176,15 +227,17 @@ def qfn_pads(pins_left, pins_bottom, pins_right, pins_top, pitch, body, along, r
     return pads
 
 
+
+
 # STPM32, DocID025358 Figure 4. Pin 1 is the top of the left side.
 st_left = [("CLKOUT", "NC"), ("XTAL2", "XTAL2"), ("XTAL1", "XTAL1"),
-           ("LED1", "LED1"), ("LED2", "NC"), ("INT1", "NC")]
-st_bot = [("EN", "EN"), ("VIP1", "VIP"), ("VIN1", "GND"),
+           ("LED1", "LED1"), ("LED2", "LED2"), ("INT1", "NC")]
+st_bot = [("EN", "STP_EN"), ("VIP1", "VIP"), ("VIN1", "GND"),
           ("IIP1", "IIP"), ("IIN1", "IIN"), ("VREF1", "VREF")]
 st_right = [("GND_REF", "GND"), ("GNDA", "GND"), ("VDDA", "VDDA"),
             ("GND_REG", "GND"), ("VCC", "VDD"), ("GNDD", "GND")]
 st_top = [("MISO", "STP_MISO"), ("MOSI", "STP_MOSI"), ("SCL", "STP_SCK"),
-          ("SCS", "STP_CS"), ("VDDD", "VDDD"), ("SYN", "GND")]
+          ("SCS", "STP_CS_N"), ("VDDD", "VDDD"), ("SYN", "GND")]
 add_part("U2", "metrology", "ST STPM32TR", "QFN-24-4x4", 70, 28, 0,
          qfn_pads(st_left, st_bot, st_right, st_top, 0.5, 4.0, 0.28, 0.70)
          + [p("EP", 0, 0, 2.4, 2.4, "GND")])
@@ -216,9 +269,10 @@ add_part("C12", "100 nF", "Murata GRM188R71H104KA93", "0603", 62, 22, 0, [
     p("1", -0.7, 0, 0.6, 0.7, "VDD", 0),
     p("2", 0.7, 0, 0.6, 0.7, "GND", 0),
 ])
+# EN is driven by EC-MINT1 (SPI select). R12 holds it low until then.
 add_part("R12", "10 k", "Yageo RC0603FR-0710KL", "0603", 62, 16, 90, [
-    p("1", -0.7, 0, 0.6, 0.7, "VDD", 0),
-    p("2", 0.7, 0, 0.6, 0.7, "EN", 0),
+    p("1", -0.7, 0, 0.6, 0.7, "GND", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "STP_EN", 0),
 ])
 add_part("R13", "10 k", "Yageo RC0603FR-0710KL", "0603", 78, 12, 0, [
     p("1", -0.7, 0, 0.6, 0.7, "LED1", 0),
@@ -235,17 +289,17 @@ add_part("C13", "100 pF", "Murata GRM1885C1H101JA01", "0603", 86, 12, 90, [
 add_part("Q1", "2N7002", "onsemi 2N7002", "SOT-23", 92, 16, 0, [
     p("G", -1.0, 0.9, 0.6, 0.6, "CF_G", 0),
     p("S", -1.0, -0.9, 0.6, 0.6, "GND", 0),
-    p("D", 1.0, 0, 0.6, 0.6, "CF", 0),
+    p("D", 1.0, 0, 0.6, 0.6, "CF_EXP", 0),
 ])
 add_part("R15", "10 k", "Yageo RC0603FR-0710KL", "0603", 92, 22, 90, [
     p("1", -0.7, 0, 0.6, 0.7, "VDD", 0),
-    p("2", 0.7, 0, 0.6, 0.7, "CF", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "CF_EXP", 0),
 ])
 add_part("R16", "100 k", "Yageo RC0603FR-07100KL", "0603", 86, 64, 90, [
     p("1", -0.7, 0, 0.6, 0.7, "VDD", 0),
     p("2", 0.7, 0, 0.6, 0.7, "MESH", 0),
 ])
-add_part("R17", "2.2 k", "Yageo RC0603FR-072K2L", "0603", 92, 58, 90, [
+add_part("R17", "10 k", "Yageo RC0603FR-0710KL", "0603", 92, 58, 90, [
     p("1", -0.7, 0, 0.6, 0.7, "MESH", 0),
     p("2", 0.7, 0, 0.6, 0.7, "MESH_SW", 0),
 ])
@@ -287,27 +341,38 @@ add_part("C14", "1 uF", "Murata GRM188R71C105KA12", "0603", 90, 40, 90, [
     p("1", -0.7, 0, 0.6, 0.7, "CROW_G", 0),
     p("2", 0.7, 0, 0.6, 0.7, "GND", 0),
 ])
-add_part("Q4", "2N7002 crowbar", "onsemi 2N7002", "SOT-23", 96, 36, 0, [
+# Signer rail: Q5 is a P-channel switch from VDD, on while CROW_G is low.
+# When the delayed ZEROIZE raises CROW_G, Q5 opens and Q4 discharges the
+# rail through R23. doc-1.1 fed the signer through 47 ohm and crowbarred
+# the rail, which dropped about 1 V at sign current and, when fired, pulled
+# 70 mA from a 50 mA regulator.
+add_part("Q5", "P-FET rail switch", "Diodes DMG2305UX-7", "SOT-23", 82, 35, 0, [
     p("G", -1.0, 0.9, 0.6, 0.6, "CROW_G", 0),
-    p("S", -1.0, -0.9, 0.6, 0.6, "GND", 0),
+    p("S", -1.0, -0.9, 0.6, 0.6, "VDD", 0),
     p("D", 1.0, 0, 0.6, 0.6, "QS_VDD", 0),
 ])
+add_part("Q4", "2N7002 discharge", "onsemi 2N7002", "SOT-23", 96, 36, 0, [
+    p("G", -1.0, 0.9, 0.6, 0.6, "CROW_G", 0),
+    p("S", -1.0, -0.9, 0.6, 0.6, "GND", 0),
+    p("D", 1.0, 0, 0.6, 0.6, "QS_DIS", 0),
+])
 add_part("R23", "47 ohm 0.25 W", "Panasonic ERJ-P08J470V", "1206", 88, 32, 0, [
-    p("1", -1.4, 0, 0.8, 1.0, "VDD", 0),
-    p("2", 1.4, 0, 0.8, 1.0, "QS_VDD", 0),
+    p("1", -1.4, 0, 0.8, 1.0, "QS_VDD", 0),
+    p("2", 1.4, 0, 0.8, 1.0, "QS_DIS", 0),
 ])
 
-# EC-MINT1. Top row, left to right, is pins 32 down to 25. All are VSS.
-ml = [("VDD", "VDD"), ("VSS", "GND"), ("CF_IN", "CF"), ("ZEROIZE", "ZEROIZE"),
+# EC-MINT1. Top row, left to right, is pins 32 down to 25.
+ml = [("VDD", "VDD"), ("VSS", "GND"), ("CF_EXP", "CF_EXP"), ("ZEROIZE", "ZEROIZE"),
       ("RST_N", "RST_N"), ("MINT", "MINT"), ("UART_TX", "UART_TX"), ("QS_SCK", "QS_SCK")]
 mb = [("QS_MOSI", "QS_MOSI"), ("QS_MISO", "QS_MISO"), ("QS_CS_N", "QS_CS_N"),
       ("QS_RST_N", "QS_RST"), ("STP_SCK", "STP_SCK"), ("STP_MOSI", "STP_MOSI"),
-      ("STP_MISO", "STP_MISO"), ("STP_CS", "STP_CS")]
+      ("STP_MISO", "STP_MISO"), ("STP_CS_N", "STP_CS_N")]
 mr = [("XI", "XI"), ("PROV_CS", "PROV_CS"), ("PROV_SCK", "PROV_SCK"),
       ("PROV_MOSI", "PROV_MOSI"), ("PROV_MISO", "PROV_MISO"), ("CAL_LOCKED", "CAL_LOCKED"),
       ("VDD2", "VDD"), ("VSS2", "GND")]
-mt = [("32", "GND"), ("31", "GND"), ("30", "GND"), ("29", "GND"),
-      ("28", "GND"), ("27", "GND"), ("26", "GND"), ("25", "GND")]
+mt = [("32", "GND"), ("31", "GND"), ("STP_EN", "STP_EN"), ("FR_MISO", "FR_MISO"),
+      ("FR_MOSI", "FR_MOSI"), ("FR_SCK", "FR_SCK"), ("FR_CS_N", "FR_CS_N"),
+      ("CF_IMP", "CF_IMP")]
 add_part("U3", "schedule die", "EC-MINT1", "QFN-32-5x5", 78, 46, 0,
          qfn_pads(ml, mb, mr, mt, 0.5, 5.0, 0.28, 0.70) + [p("EP", 0, 0, 3.1, 3.1, "GND")])
 add_part("Y2", "16.000 MHz CMOS", "Abracon ASE-16.000MHZ-LR-T", "3.2x2.5", 90, 46, 0, [
@@ -345,7 +410,7 @@ add_part("R26", "100 ohm", "Yageo RC0603FR-07100RL", "0603", 92, 28, 0, [
     p("2", 0.7, 0, 0.6, 0.7, "RADIO_TX", 0),
 ])
 add_part("J4", "radio header", "Samtec TSM-106-01-L-SV", "1x6-2.54", 96, 22, 0, [
-    p("1", 0, 6.35, 1.6, 1.6, "VDD", 1.0),
+    p("1", 0, 6.35, 1.6, 1.6, "VRECT", 1.0),
     p("2", 0, 3.81, 1.6, 1.6, "GND", 1.0),
     p("3", 0, 1.27, 1.6, 1.6, "GND", 1.0),
     p("4", 0, -1.27, 1.6, 1.6, "RADIO_TX", 1.0),
@@ -368,6 +433,47 @@ add_part("SW1", "mesh contact", "spring", "pad", 96, 6, 0, [
 ])
 
 
+# Import pulses: LED2 through a second buffer into EC-MINT1 CF_IMP.
+add_part("R28", "10 k", "Yageo RC0603FR-0710KL", "0603", 82, 12, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "LED2", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "VDD", 0),
+])
+add_part("R29", "100 ohm", "Yageo RC0603FR-07100RL", "0603", 82, 8, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "LED2", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "CF2_G", 0),
+])
+add_part("C19", "100 pF", "Murata GRM1885C1H101JA01", "0603", 84.5, 4.5, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "CF2_G", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "GND", 0),
+])
+add_part("Q6", "2N7002", "onsemi 2N7002", "SOT-23", 88, 8, 0, [
+    p("G", -1.0, 0.9, 0.6, 0.6, "CF2_G", 0),
+    p("S", -1.0, -0.9, 0.6, 0.6, "GND", 0),
+    p("D", 1.0, 0, 0.6, 0.6, "CF_IMP", 0),
+])
+add_part("R30", "10 k", "Yageo RC0603FR-0710KL", "0603", 92, 10, 90, [
+    p("1", -0.7, 0, 0.6, 0.7, "VDD", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "CF_IMP", 0),
+])
+# FRAM for counters, sequence and the calibration image. SOIC-8:
+# 1 /CS, 2 SO, 3 /WP, 4 VSS, 5 SI, 6 SCK, 7 /HOLD, 8 VDD.
+add_part("U6", "256 Kbit SPI F-RAM", "Infineon FM25V02A-G", "SOIC-8", 84, 25, 0, [
+    p("1", -2.7, 1.905, 1.5, 0.6, "FR_CS_N", 0),
+    p("2", -2.7, 0.635, 1.5, 0.6, "FR_MISO", 0),
+    p("3", -2.7, -0.635, 1.5, 0.6, "VDD", 0),
+    p("4", -2.7, -1.905, 1.5, 0.6, "GND", 0),
+    p("5", 2.7, -1.905, 1.5, 0.6, "FR_MOSI", 0),
+    p("6", 2.7, -0.635, 1.5, 0.6, "FR_SCK", 0),
+    p("7", 2.7, 0.635, 1.5, 0.6, "VDD", 0),
+    p("8", 2.7, 1.905, 1.5, 0.6, "VDD", 0),
+])
+add_part("C20", "100 nF", "Murata GRM188R71H104KA93", "0603", 84, 30, 0, [
+    p("1", -0.7, 0, 0.6, 0.7, "VDD", 0),
+    p("2", 0.7, 0, 0.6, 0.7, "GND", 0),
+])
+
+
+
 PKG_BODY = {
     "1206": (3.2, 1.6),
     "0603": (1.6, 0.8),
@@ -382,6 +488,10 @@ PKG_BODY = {
     "3.2x2.5": (3.2, 2.5),
     "shunt-5216": (16.2, 5.2),
     "rad-8": (8.0, 8.0),
+    "rad-10": (10.0, 10.0),
+    "rad-9.5": (9.5, 9.5),
+    "SO-8": (6.0, 5.0),
+    "SOIC-8": (6.0, 5.0),
     "disc-10": (10.0, 10.0),
     "box-22.5": (26.5, 11.0),
     "fuse-5x20": (20.0, 5.2),
@@ -500,23 +610,22 @@ def paint(net, x0, y0, x1, y1, width=0.50):
 
 
 # 40 A force pours. They cover the stud and the force pad, not the Kelvin pad.
+# Ground is Line: the grid stud, the grid-side force pad, and a strip along
+# the top edge to via TV1, where the inner ground plane begins.
 pour("L_GEN", 13.0, 43.0, 24.0, 49.0)
-pour("L_GRID", 13.0, 55.0, 24.2, 68.0)
-# Left gutter stays left of Neutral. It crosses above the generator pour, then down.
-pour("L_GRID", 6.0, 38.6, 6.8, 56.0)
-pour("L_GRID", 6.0, 38.6, 18.6, 39.6)
-pour("L_GRID", 17.8, 9.2, 18.8, 39.6)
-pour("GND", 9.0, 29.0, 15.0, 35.0)
-pour("GND", 9.6, 30.6, 12.5, 33.4)
-pour("GND", 9.6, 4.2, 10.4, 31.0)
-pour("GND", 9.6, 4.2, 48.8, 6.2)
+pour("GND", 13.0, 55.0, 24.2, 67.0)
+pour("GND", 24.0, 66.0, 48.8, 67.0)
+# Neutral: the stud, a strip to the fuse, and a left gutter to the divider.
+pour("N", 9.0, 29.0, 15.0, 35.0)
+pour("N", 12.0, 35.0, 19.1, 39.1)
+pour("N", 9.6, 6.4, 10.4, 29.0)
+pour("N", 9.6, 6.4, 19.0, 7.6)
 
-# 100 mA fused tap: fuse, MOV line pin, top lead of C1.
-paint("L_FUSED", 40.0, 65.2, 33.5, 65.2, 0.80)
-paint("L_FUSED", 33.5, 65.2, 33.5, 39.2, 0.80)
-paint("L_FUSED", 33.5, 39.2, 36.0, 39.2, 0.80)
+# Fused Neutral: fuse, MOV, surge resistor.
+paint("N_F", 38.0, 38.0, 42.5, 38.0, 0.80)
+paint("N_F", 42.5, 38.0, 42.5, 26.6, 0.80)
 # Low-voltage end of the divider, on the logic side of the plane cut.
-paint("VIP_S", 42.6, 10.0, 49.2, 16.0, 0.40)
+paint("VIP_S", 42.6, 7.0, 49.2, 7.0, 0.40)
 
 
 def covers(ref, pad, net):
@@ -530,61 +639,91 @@ def covers(ref, pad, net):
                         hit = True
             if not hit:
                 print("UNCONNECTED", ref, pad, net, "at", round(x, 2), round(y, 2))
+                FAILED.append(("unconnected", ref, pad))
             return
     print("NO PAD", ref, pad)
+    FAILED.append(("no pad", ref, pad))
 
 
+FAILED = []
 for ref, pad, net in (
-    ("H1", "1", "L_GRID"), ("F1", "1", "L_GRID"), ("RS", "IG", "L_GRID"),
-    ("R4", "1", "L_GRID"), ("H2", "1", "L_GEN"), ("RS", "FG", "L_GEN"),
-    ("H3", "1", "GND"), ("TV1", "1", "GND"),
-    ("F1", "2", "L_FUSED"), ("RV1", "1", "L_FUSED"), ("C1", "2", "L_FUSED"),
+    ("H1", "1", "GND"), ("RS", "IG", "GND"), ("TV1", "1", "GND"),
+    ("H2", "1", "L_GEN"), ("RS", "FG", "L_GEN"),
+    ("H3", "1", "N"), ("F1", "1", "N"), ("R4", "1", "N"),
+    ("F1", "2", "N_F"), ("RV1", "1", "N_F"), ("R1", "1", "N_F"),
     ("R7", "2", "VIP_S"), ("R8", "1", "VIP_S"),
 ):
     covers(ref, pad, net)
 
-MAINS = {
-    "L_GRID", "L_GEN", "L_FUSED", "DROP", "RECT_AC", "BLEED",
-    "VD1", "VD2", "VD3", "VIP_S",
-}
+# Nets that swing with the mains relative to logic ground (Line).
+HV = {"N", "N_F", "N_R", "VD1", "VD2", "VD3", "VB1", "VBULK", "SW", "BP", "FB", "FBC"}
+# Nets within a few volts of logic ground, including the shunt itself.
+LV = {"GND", "L_GEN", "IIN_F", "IIP_F", "VRECT", "VDD", "VIP_S", "VIP", "QS_VDD"}
+NEED = 2.5
+# VD3 is the last tap of the divider string: it sits about a quarter of the
+# line voltage above VIP_S, across R7 itself (a 700 V TNPV1206). The full
+# 2.5 mm line rule does not apply across that one resistor.
+NEED_PAIR = {("VD3", "VIP_S"): 1.5}
 
 
-def min_gap(a, b, need):
-    ca = [(x, y) for y in range(NY) for x in range(NX) if occ[y][x] == a]
-    cb = [(x, y) for y in range(NY) for x in range(NX) if occ[y][x] == b]
-    best = 999
-    where = None
-    # Cell-center distance. A 2.5 mm rule is 10 cells.
-    step = 1
-    for x, y in ca[::step]:
-        for x2, y2 in cb[::step]:
-            d = math.hypot((x - x2) * CELL, (y - y2) * CELL)
-            if d < best:
-                best = d
-                where = (x * CELL, y * CELL, x2 * CELL, y2 * CELL)
-            if d < need:
-                return best, where
+def cells_of(net):
+    return [(x, y) for y in range(NY) for x in range(NX) if occ[y][x] == net]
+
+
+def min_gap(net, others, need):
+    """Cell-centre distance from net to the nearest cell of any net in
+    others, searched out to `need`. Returns (gap, where)."""
+    r = int(math.ceil(need / CELL)) + 1
+    best, where = 999.0, None
+    for x, y in cells_of(net):
+        for dy in range(-r, r + 1):
+            yy = y + dy
+            if not 0 <= yy < NY:
+                continue
+            row = occ[yy]
+            for dx in range(-r, r + 1):
+                xx = x + dx
+                if 0 <= xx < NX and row[xx] in others:
+                    d = math.hypot(dx * CELL, dy * CELL)
+                    if d < best:
+                        best, where = d, (x * CELL, y * CELL, xx * CELL, yy * CELL, row[xx])
     return best, where
 
 
-# Line copper versus neutral. The shunt's own Kelvin gap is not this check.
 worst = []
-for net in ("L_GRID", "L_GEN", "L_FUSED", "DROP", "RECT_AC"):
-    gap, where = min_gap(net, "GND", 2.5)
-    worst.append((net, round(gap, 2), where))
-    if gap < 2.5:
-        print("CLEARANCE", net, "to GND", round(gap, 2), where)
-for a, b in (("L_GRID", "RECT_AC"), ("L_GRID", "L_FUSED"), ("L_GRID", "DROP")):
-    gap, where = min_gap(a, b, 2.5)
-    worst.append((a + "/" + b, round(gap, 2), where))
-    if gap < 2.5:
-        print("CLEARANCE", a, b, round(gap, 2), where)
-print("clearance", worst)
+for net in sorted(HV):
+    gap, where = min_gap(net, LV, NEED)
+    worst.append((net, round(min(gap, 999), 2)))
+    if where and (net, where[4]) in NEED_PAIR:
+        if gap < NEED_PAIR[(net, where[4])]:
+            print("CLEARANCE", net, "to", where[4], round(gap, 2), where[:4])
+            FAILED.append(("clearance", net, where[4]))
+        # The rest of the logic nets still get the full rule.
+        gap, where = min_gap(net, LV - {where[4]}, NEED)
+    if gap < NEED:
+        print("CLEARANCE", net, "to", where[4], round(gap, 2), where[:4])
+        FAILED.append(("clearance", net, where[4]))
+# The inner planes start at x = 46. Mains copper stays 2.5 mm short of them,
+# and 3 mm from the board edge.
+for net in sorted(HV):
+    for x, y in cells_of(net):
+        cx, cy = (x + 0.5) * CELL, (y + 0.5) * CELL
+        if cx > 46.0 - NEED:
+            FAILED.append(("plane", net, cx, cy))
+            print("PLANE", net, "copper at", cx, cy, "is within 2.5 mm of the plane cut")
+            break
+        if min(cx, cy, GW - cx, GH - cy) < 3.0:
+            FAILED.append(("edge", net, cx, cy))
+            print("EDGE", net, "copper at", cx, cy)
+            break
+print("clearance (mains net, gap to logic ground nets in mm; 999 = none within 2.5)", worst)
+if FAILED:
+    raise SystemExit(f"{len(FAILED)} layout rule failures")
 
 
 def gerber_header(name):
     return (
-        f"G04 EC-SEAL1 {name} doc-1.1*\n"
+        f"G04 EC-SEAL1 rev B {name} v0.0.1 doc-1.2*\n"
         "%FSLAX46Y46*%\n%MOMM*%\n%LPD*%\n"
         "%ADD10C,0.250*%\n%ADD11C,0.600*%\n%ADD12C,0.150*%\n"
     )
@@ -700,29 +839,31 @@ open(os.path.join(GER, "ec-seal1-PTH.drl"), "w").write("".join(drill_lines))
 with open(os.path.join(OUT, "centroid.csv"), "w") as f:
     f.write("ref,x_mm,y_mm,rot,value,mpn,package\n")
     for ref, value, mpn, pkg, x, y, rot in PARTS:
-        f.write(f"{ref},{x:.3f},{y:.3f},{rot},{value},{mpn},{pkg}\n")
+        f.write(f"{ref},{x:.3f},{y:.3f},{rot},\"{value}\",{mpn},{pkg}\n")
 
 nets = collections.defaultdict(list)
 for x, y, w, h, net, drill, ref, name in PADS:
     if net != "NC":
         nets[net].append(f"{ref}.{name}")
 with open(os.path.join(OUT, "netlist.txt"), "w") as f:
-    f.write("# EC-SEAL1 netlist doc-1.1.\n")
+    f.write("# EC-SEAL1 rev B netlist, v0.0.1 (doc-1.2).\n")
     f.write("# Finished copper is the pours and the traces in the Gerber.\n")
     f.write("# Every other connection is this list, fanned out by the board house.\n")
-    f.write("# GND is Neutral. H3 and the logic ground are the same net.\n")
+    f.write("# GND is Line on the grid side of the shunt: H1, RS.IG and the logic ground.\n")
+    f.write("# N is Neutral (H3). The whole board is at mains potential.\n")
     for net in sorted(nets):
         f.write(f"\nNET {net}\n")
         for pin in nets[net]:
             f.write(f"  {pin}\n")
 
-with open(os.path.join(OUT, "BOM.csv"), "w") as f:
-    f.write("ref,qty,value,mpn,package,function\n")
+with open(os.path.join(OUT, "BOM.csv"), "w", newline="") as f:
+    w = csv.writer(f, lineterminator="\n")
+    w.writerow(["ref", "qty", "value", "mpn", "package"])
     grouped = collections.OrderedDict()
     for ref, value, mpn, pkg, x, y, rot in PARTS:
         grouped.setdefault((value, mpn, pkg), []).append(ref)
     for (value, mpn, pkg), refs in grouped.items():
-        f.write(f"\"{' '.join(refs)}\",{len(refs)},{value},{mpn},{pkg},\n")
+        w.writerow([" ".join(refs), len(refs), value, mpn, pkg])
 
 # Placement drawing. Origin lower left, y up. Not fabrication artwork.
 svg = [
@@ -733,8 +874,8 @@ svg = [
     "<rect x='46' y='2' width='52' height='66' fill='#243040'/>",
 ]
 colors = {
-    "L_GRID": "#e85d4c", "L_GEN": "#e85d4c", "L_FUSED": "#e39b3b",
-    "DROP": "#e39b3b", "RECT_AC": "#e39b3b", "GND": "#4aa3df",
+    "N": "#e85d4c", "L_GEN": "#4aa3df", "N_F": "#e39b3b",
+    "VB1": "#e39b3b", "VBULK": "#e39b3b", "SW": "#e39b3b", "GND": "#4aa3df",
     "VDD": "#d6c15a", "QS_VDD": "#c084fc", "VRECT": "#f0a060",
 }
 for net, x0, y0, x1, y1 in REGIONS:
@@ -763,7 +904,7 @@ open(os.path.join(OUT, "placement.svg"), "w").write("\n".join(svg))
 img = Image.new("RGB", (NX * 3, NY * 3), (18, 22, 26))
 px = img.load()
 col = {
-    "L_GRID": (232, 93, 76), "L_GEN": (232, 93, 76), "L_FUSED": (227, 155, 59),
+    "N": (232, 93, 76), "L_GEN": (74, 163, 223), "N_F": (227, 155, 59),
     "GND": (74, 163, 223), "VIP_S": (120, 180, 120),
 }
 for y in range(NY):

@@ -1,5 +1,7 @@
 // Mint schedule. Synthesizable counter and comparator.
 // Wraps a hard ML-DSA engine. Not a tapeout. doc-0.9.
+// SUPERSEDED by hardware/asic/rtl/ec_mint1_schedule.v (v0.0.1, doc-1.2):
+// this version loses W on reset and counts export only. Do not build.
 module mint_schedule (
     input  wire        clk,
     input  wire        rst_n,
