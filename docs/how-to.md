@@ -39,7 +39,7 @@ The SVG sheets in `docs/schematics/` are drawn from revision B by `tools/gen_sch
 You need Git and Python 3.10 or later. Icarus Verilog runs the RTL; yosys is optional; a C compiler runs the firmware test; Pillow draws the board placement image.
 
 ```sh
-git clone https://github.com/sbusch305/enerchain.git
+git clone https://github.com/Insomniac-VibeLabs/enerchain.git
 cd enerchain
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e '.[test]' pillow
