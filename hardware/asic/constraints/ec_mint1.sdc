@@ -1,0 +1,7 @@
+create_clock -name clk -period 61.035 -waveform {0 30.5} [get_ports XI]
+set_input_delay 5 -clock clk [get_ports CF_IN]
+set_input_delay 5 -clock clk [get_ports ZEROIZE]
+set_input_delay 5 -clock clk [get_ports RST_N]
+set_output_delay 5 -clock clk [get_ports TX]
+set_output_delay 5 -clock clk [get_ports MINT]
+set_false_path -from [get_ports RST_N]
