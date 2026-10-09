@@ -32,7 +32,7 @@ Do not build from [hardware/fab/BOM.csv](../hardware/fab/BOM.csv) (doc-0.9) or f
 13. [EC-MINT1](../hardware/asic/README.md) — chip handoff. Verilog and a package drawing, not GDSII.
 14. [Economics](economics.md), [interplanetary economics](interplanetary-economics.md), [governance](governance.md), [roadmap](../ROADMAP.md), [references](references.md).
 
-The SVG sheets in `docs/schematics/` are doc-0.7 design drawings and are superseded. `hardware/asic/rtl/keccak_round.v` and `ntt_butterfly.v` are doc-0.8 sketches. Do not build or synthesize them.
+The SVG sheets in `docs/schematics/` are drawn from revision B by `tools/gen_schematics.py`, which checks every value against the circuit calculations and every connection against the netlist. They are explanations, not fabrication artwork. `hardware/asic/rtl/keccak_round.v` and `ntt_butterfly.v` are doc-0.8 sketches. Do not build or synthesize them.
 
 ## Set up
 
@@ -58,7 +58,7 @@ python3 tools/gen_board.py           # regenerate the board files and check the 
 Passing lines:
 
 ```text
-PASS schedule: 1000 net-export Wh -> 1 token, splits and loops mint nothing extra
+PASS schedule: 1000 net-export Wh (1 kWh) -> 1 token and 1 record, splits and loops mint nothing extra
 PASS rtl == model: 4 signed records byte-exact
 PASS sign_oracle: one keygen, persistent wipe, rollback guard
 bodies clear 82 ... wrote .../gerber regions 7 pads 277
@@ -105,7 +105,7 @@ Do these in order. The pass conditions are the numbered steps in [TEST.md](../ha
 3. 300 V DC into the buck: 12 V, then 3.3 V; the signer rail follows.
 4. Shift the calibration image. `CAL_LOCKED` rises and stays risen across power cycles.
 5. Divider, shunt, and the LED1/LED2 direction check through the isolation transformer.
-6. 10 000 export pulses, one UART frame with tokens 10; import cancels export; a power cut loses nothing.
+6. 1000 export pulses, one UART frame with tokens 1; each further 1000 pulses, one more frame; import cancels export; a power cut loses nothing.
 7. The other board of the pair, its own key. Submit both records to a devnet with `enerchain`; the pair mints the smaller count.
 8. Spring released under power: `5C 5C` on the signer MOSI, the signer rail off, no further frames.
 

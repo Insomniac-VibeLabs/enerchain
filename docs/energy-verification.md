@@ -1,6 +1,6 @@
 # Energy verification
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09). The record below is the v0.0.1 wire format; the doc-0.3 illustration it replaces was not one.
+Edition: v0.0.1 (doc-1.3, 2026-10-09). The record below is the v0.0.1 wire format; the doc-0.3 illustration it replaces was not one.
 
 ## Plain language
 
@@ -14,7 +14,7 @@ The meter measures voltage and current and integrates active power, in both dire
 - a sequence number
 - cumulative export watt-hours
 - cumulative import watt-hours
-- cumulative tokens, one per 1000 Wh of net export
+- cumulative tokens, one per 1000 Wh (1 kWh) of net export
 - the CRC of the calibration image the meter was certified with
 - the device signature
 
@@ -25,17 +25,17 @@ A decoded record, as `enerchain frame verify` prints it:
   "valid_signature": true,
   "meter_id": 1002,
   "role": 2,
-  "seq": 3,
-  "e_exp": 30412,
+  "seq": 30,
+  "e_exp": 36208,
   "e_imp": 6208,
   "tokens": 30,
-  "cal_crc": 18017,
+  "cal_crc": 49326,
   "version": 1,
   "class_tag": 34
 }
 ```
 
-Check: the tokens field may not exceed export divided by 1000 (30 ≤ 30.412), and it equals the high-water mark of export minus import, divided by 1000. Voltage, current and power factor are inside the STPM32's integral; they are not in the record, because the record is what mints and the integral is what the meter is certified for. Accuracy classes for this integral are standardized [IEC 62053-22:2020].
+This GRID meter exported 5000 Wh, imported 6208 Wh, then exported 31 208 Wh. Check: the tokens field may not exceed export divided by 1000 (30 ≤ 36.208), and it equals the high-water mark of export minus import, divided by 1000, rounded down. A record is built the moment its token is minted, so in every record export minus import is exactly 1000 × tokens (36 208 − 6208 = 30 000), and seq is 30 because each of the 30 tokens produced one record. Voltage, current and power factor are inside the STPM32's integral; they are not in the record, because the record is what mints and the integral is what the meter is certified for. Accuracy classes for this integral are standardized [IEC 62053-22:2020].
 
 ## Hardware
 
@@ -44,7 +44,7 @@ The meter contains a secure element, a unique identity, a private key that does 
 ## Steps
 
 1. The GEN meter and the GRID meter each integrate voltage and current in both directions.
-2. Each schedule die counts tokens on net export and, every 10 tokens, builds a record; each secure element signs its own.
+2. Each schedule die counts tokens on net export and, for every token (every kilowatt-hour), builds a record; each secure element signs its own.
 3. The records are submitted.
 4. Validators accept each record whose signature verifies and whose sequence and counters advance.
 5. The pair's owner is credited with min(GEN tokens, GRID tokens), less what was already credited.

@@ -1,86 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720">
-  <rect width="1100" height="720" fill="#0e1116"/>
-  <text x="40" y="36" fill="#e8edf2" font-family="ui-sans-serif, sans-serif" font-size="20">Enerchain mint path — hardware only, meter-class burden</text>
-  <text x="40" y="58" fill="#9aa6b2" font-family="ui-sans-serif, sans-serif" font-size="13">doc-0.6. Supply tap is before the shunt, so the trickle is not minted. P_mint ≤ 2 W.</text>
-
-  <!-- generation terminals -->
-  <text x="40" y="110" fill="#7dcea0" font-family="ui-sans-serif, sans-serif" font-size="13">generation feeder</text>
-  <line x1="40" y1="140" x2="150" y2="140" stroke="#e8edf2" stroke-width="2"/>
-  <line x1="40" y1="200" x2="150" y2="200" stroke="#e8edf2" stroke-width="2"/>
-  <text x="48" y="134" fill="#e8edf2" font-size="12">L</text>
-  <text x="48" y="194" fill="#e8edf2" font-size="12">N</text>
-
-  <!-- supply tap -->
-  <line x1="150" y1="140" x2="150" y2="250" stroke="#f0c674" stroke-width="2"/>
-  <rect x="120" y="250" width="120" height="36" fill="#1b2430" stroke="#f0c674"/>
-  <text x="132" y="272" fill="#f0c674" font-size="11">supply ≤ 2 W</text>
-  <text x="128" y="304" fill="#9aa6b2" font-size="11">before shunt</text>
-
-  <!-- shunt -->
-  <line x1="150" y1="140" x2="250" y2="140" stroke="#e8edf2" stroke-width="2"/>
-  <rect x="250" y="128" width="70" height="24" fill="none" stroke="#e8edf2"/>
-  <text x="262" y="144" fill="#e8edf2" font-size="11">R_s</text>
-  <text x="248" y="118" fill="#9aa6b2" font-size="11">shunt</text>
-  <line x1="320" y1="140" x2="430" y2="140" stroke="#e8edf2" stroke-width="2"/>
-  <text x="400" y="118" fill="#7dcea0" font-size="12">to grid</text>
-
-  <!-- voltage divider -->
-  <line x1="200" y1="140" x2="200" y2="360" stroke="#8eb4f0" stroke-width="2"/>
-  <line x1="200" y1="360" x2="250" y2="360" stroke="#8eb4f0" stroke-width="2"/>
-  <rect x="250" y="348" width="36" height="24" fill="none" stroke="#8eb4f0"/>
-  <text x="258" y="364" fill="#8eb4f0" font-size="11">R1</text>
-  <line x1="286" y1="360" x2="330" y2="360" stroke="#8eb4f0" stroke-width="2"/>
-  <rect x="330" y="348" width="36" height="24" fill="none" stroke="#8eb4f0"/>
-  <text x="338" y="364" fill="#8eb4f0" font-size="11">R2</text>
-  <line x1="348" y1="372" x2="348" y2="430" stroke="#8eb4f0" stroke-width="2"/>
-  <line x1="150" y1="200" x2="430" y2="200" stroke="#e8edf2" stroke-width="2"/>
-  <text x="250" y="392" fill="#9aa6b2" font-size="11">voltage divider</text>
-
-  <!-- shunt sense -->
-  <line x1="260" y1="152" x2="260" y2="430" stroke="#e8a0a0" stroke-width="2"/>
-  <line x1="310" y1="152" x2="310" y2="430" stroke="#e8a0a0" stroke-width="2"/>
-  <text x="250" y="418" fill="#9aa6b2" font-size="11">shunt sense</text>
-
-  <!-- metrology IC -->
-  <rect x="420" y="400" width="200" height="90" fill="#1b2430" stroke="#8eb4f0" stroke-width="2"/>
-  <text x="436" y="428" fill="#e8edf2" font-size="13">metrology core</text>
-  <text x="436" y="448" fill="#9aa6b2" font-size="11">fixed-function ADC + Σ v·i·Δt</text>
-  <text x="436" y="466" fill="#9aa6b2" font-size="11">CF pulse = 1 per Wh</text>
-  <line x1="348" y1="430" x2="420" y2="430" stroke="#8eb4f0" stroke-width="2"/>
-  <line x1="310" y1="450" x2="420" y2="450" stroke="#e8a0a0" stroke-width="2"/>
-
-  <!-- pulse to SE -->
-  <line x1="620" y1="445" x2="700" y2="445" stroke="#f0c674" stroke-width="2"/>
-  <text x="630" y="436" fill="#f0c674" font-size="11">CF</text>
-
-  <!-- secure element -->
-  <rect x="700" y="390" width="220" height="120" fill="#1b2430" stroke="#f0c674" stroke-width="2"/>
-  <text x="716" y="418" fill="#e8edf2" font-size="13">secure element</text>
-  <text x="716" y="438" fill="#9aa6b2" font-size="11">counts CF inside seal</text>
-  <text x="716" y="456" fill="#9aa6b2" font-size="11">n = floor((r+w)/q)</text>
-  <text x="716" y="474" fill="#9aa6b2" font-size="11">ML-DSA-44 sign, key on chip</text>
-  <text x="716" y="492" fill="#9aa6b2" font-size="11">sleep between pulses</text>
-
-  <!-- tamper -->
-  <rect x="700" y="540" width="220" height="50" fill="#1b2430" stroke="#e8a0a0"/>
-  <text x="716" y="568" fill="#e8a0a0" font-size="12">tamper mesh → zeroize sk</text>
-  <line x1="810" y1="510" x2="810" y2="540" stroke="#e8a0a0" stroke-width="2"/>
-
-  <!-- radio -->
-  <line x1="920" y1="450" x2="990" y2="450" stroke="#7dcea0" stroke-width="2"/>
-  <rect x="990" y="420" width="80" height="60" fill="#1b2430" stroke="#7dcea0"/>
-  <text x="1002" y="446" fill="#7dcea0" font-size="11">radio</text>
-  <text x="1002" y="464" fill="#9aa6b2" font-size="10">slept</text>
-
-  <!-- power rails -->
-  <line x1="180" y1="268" x2="800" y2="268" stroke="#f0c674" stroke-width="1" stroke-dasharray="4 3"/>
-  <text x="430" y="260" fill="#f0c674" font-size="11">Vdd from supply tap, not from host</text>
-
-  <!-- ledger note -->
-  <rect x="40" y="560" width="620" height="120" fill="#1b2430" stroke="#3d4c5c"/>
-  <text x="56" y="588" fill="#e8edf2" font-size="13">What is hardware, what is not minted</text>
-  <text x="56" y="612" fill="#9aa6b2" font-size="12">Host CPU is absent. The core emits CF. The element signs. The radio forwards.</text>
-  <text x="56" y="632" fill="#9aa6b2" font-size="12">Ledger nodes only verify. No difficulty, no hash contest.</text>
-  <text x="56" y="652" fill="#9aa6b2" font-size="12">One ML-DSA-44 sign is ~19 mJ, against 3.6 MJ in the attested kWh.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620" font-family="ui-sans-serif,sans-serif">
+  <rect width="1180" height="620" fill="#f7f4ee"/>
+  <text x="24" y="32" font-size="16" fill="#111" text-anchor="start">Enerchain mint path — EC-SEAL1 revision B</text>
+  <text x="24" y="52" font-size="12" fill="#444" text-anchor="start">One sealed board per meter, two meters per site. Ground is Line at the shunt. EC-SEAL1 rev B, doc-1.3.</text>
+  <text x="40" y="98" font-size="11" fill="#444" text-anchor="start">generator</text>
+  <text x="1100" y="98" font-size="11" fill="#444" text-anchor="end">grid</text>
+  <line x1="40" y1="110" x2="1140" y2="110" stroke="#111" stroke-width="3"/>
+  <text x="40" y="126" font-size="11" fill="#111" text-anchor="start">L</text>
+  <line x1="40" y1="190" x2="1140" y2="190" stroke="#111" stroke-width="2"/>
+  <text x="40" y="206" font-size="11" fill="#111" text-anchor="start">N</text>
+  <rect x="240" y="96" width="100" height="28" fill="#fff" stroke="#111" stroke-width="1.2"/>
+  <text x="290" y="115" font-size="11" fill="#111" text-anchor="middle">RS 100 µΩ</text>
+  <text x="400" y="104" font-size="10" fill="#444" text-anchor="start">grid-side force pad = GND</text>
+  <rect x="60" y="250" width="170" height="80" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="145" y="268" font-size="12" fill="#111" text-anchor="middle" font-weight="600">supply (sheet 01)</text>
+  <text x="145" y="286" font-size="10" fill="#444" text-anchor="middle">F1, RV1, LNK304 → 12 V</text>
+  <text x="145" y="301" font-size="10" fill="#444" text-anchor="middle">LM2936 → 3.3 V, ≤ 2 W</text>
+  <rect x="280" y="250" width="170" height="80" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="365" y="268" font-size="12" fill="#111" text-anchor="middle" font-weight="600">divider (sheet 03)</text>
+  <text x="365" y="286" font-size="10" fill="#444" text-anchor="middle">4 × 499 k / 1 k from N</text>
+  <text x="365" y="301" font-size="10" fill="#444" text-anchor="middle">0.120 V rms at 240 V</text>
+  <rect x="500" y="250" width="190" height="80" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="595" y="268" font-size="12" fill="#111" text-anchor="middle" font-weight="600">STPM32 (sheet 04)</text>
+  <text x="595" y="286" font-size="10" fill="#444" text-anchor="middle">Σ v·i·Δt, both directions</text>
+  <text x="595" y="301" font-size="10" fill="#444" text-anchor="middle">LED1 export, LED2 import</text>
+  <rect x="740" y="250" width="200" height="110" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="840" y="268" font-size="12" fill="#111" text-anchor="middle" font-weight="600">EC-MINT1 (sheet 05)</text>
+  <text x="840" y="286" font-size="10" fill="#444" text-anchor="middle">1 Wh per pulse</text>
+  <text x="840" y="301" font-size="10" fill="#444" text-anchor="middle">1000 Wh net export = 1 token</text>
+  <text x="840" y="316" font-size="10" fill="#444" text-anchor="middle">record for every token</text>
+  <text x="840" y="331" font-size="10" fill="#444" text-anchor="middle">F-RAM: counters, image</text>
+  <rect x="990" y="250" width="160" height="80" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="1070" y="268" font-size="12" fill="#111" text-anchor="middle" font-weight="600">QS7001 (sheet 05)</text>
+  <text x="1070" y="286" font-size="10" fill="#444" text-anchor="middle">ML-DSA-44 key, on chip</text>
+  <text x="1070" y="301" font-size="10" fill="#444" text-anchor="middle">rollback guard</text>
+  <rect x="740" y="420" width="200" height="70" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="840" y="438" font-size="12" fill="#111" text-anchor="middle" font-weight="600">tamper latch (sheet 06)</text>
+  <text x="840" y="456" font-size="10" fill="#444" text-anchor="middle">ZEROIZE → erase, rail off</text>
+  <rect x="500" y="420" width="190" height="70" fill="#fffdf8" stroke="#111" stroke-width="1.2"/>
+  <text x="595" y="438" font-size="12" fill="#111" text-anchor="middle" font-weight="600">radio (sheet 07)</text>
+  <text x="595" y="456" font-size="10" fill="#444" text-anchor="middle">TX only, 2454 B per kWh</text>
+  <line x1="145" y1="190" x2="145" y2="250" stroke="#111" stroke-width="1.2"/>
+  <text x="150" y="230" font-size="9" fill="#444" text-anchor="start">fused N</text>
+  <line x1="365" y1="190" x2="365" y2="250" stroke="#111" stroke-width="1.2"/>
+  <line x1="290" y1="124" x2="290" y2="150" stroke="#111" stroke-width="1.2"/>
+  <polyline points="290,150 595,150 595,250" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="450" y="145" font-size="9" fill="#444" text-anchor="start">Kelvin pair (sheet 02)</text>
+  <line x1="450" y1="290" x2="500" y2="290" stroke="#111" stroke-width="1.2"/>
+  <line x1="690" y1="280" x2="740" y2="280" stroke="#111" stroke-width="1.2"/>
+  <text x="715" y="274" font-size="8" fill="#a33" text-anchor="middle">CF_EXP</text>
+  <line x1="690" y1="305" x2="740" y2="305" stroke="#111" stroke-width="1.2"/>
+  <text x="715" y="320" font-size="8" fill="#a33" text-anchor="middle">CF_IMP</text>
+  <line x1="940" y1="290" x2="990" y2="290" stroke="#111" stroke-width="1.2"/>
+  <text x="965" y="284" font-size="9" fill="#444" text-anchor="middle">SPI</text>
+  <polyline points="840,360 840,420" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="846" y="395" font-size="9" fill="#a33" text-anchor="start">ZEROIZE</text>
+  <polyline points="940,455 1070,455 1070,330" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="1000" y="450" font-size="9" fill="#a33" text-anchor="start">ZEROIZE</text>
+  <polyline points="760,360 760,390 595,390 595,420" fill="none" stroke="#111" stroke-width="1.2"/>
+  <text x="680" y="385" font-size="9" fill="#444" text-anchor="start">UART</text>
+  <text x="40" y="530" font-size="12" fill="#111" text-anchor="start">GEN board at the generator terminals, GRID board at the connection. Each signs its own cumulative record for every token.</text>
+  <text x="40" y="549" font-size="12" fill="#111" text-anchor="start">The ledger verifies both and credits min(T_GEN, T_GRID) less what it already credited: one token per kWh delivered net.</text>
+  <text x="40" y="568" font-size="12" fill="#111" text-anchor="start">No host CPU in the path. Ledger nodes only verify and chain (SHA-384); there is no difficulty and no hash contest.</text>
 </svg>

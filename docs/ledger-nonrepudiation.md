@@ -1,6 +1,6 @@
 # Ledger nonrepudiation and quantum-resistant issuance
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09). The payload, the acceptance rule and the block arithmetic are updated to the v0.0.1 record; the argument is unchanged.
+Edition: v0.0.1 (doc-1.3, 2026-10-09). The payload, the acceptance rule and the block arithmetic are updated to the v0.0.1 record; the argument is unchanged.
 
 The token is proof that a sealed core measured an integral. This note is how that proof is posted on a public ledger, why the signature scheme is quantum-resistant rather than quantum-proof, and why the protocol has no difficulty and no supply cap.
 
@@ -46,7 +46,7 @@ Quantum-proof would mean security even if the computational assumption is false.
 
 There is no difficulty parameter. Issuance is the token count \(T\) from the sealed registers, not a puzzle. Nothing in the protocol retargets \(q\) or a hash threshold as more meters appear. Block time is a clock constant. A block is valid when its hash chain links and its signatures verify, not when a hash is below a moving target.
 
-The block byte cap \(B\) is a protocol constant. It does not grow with height, with meter count, or with supply. An ML-DSA-44 signature is 2420 bytes [NIST FIPS 204] and the record is 32 bytes. In a binary encoding one issuance is about 2.5 kB and a cap of \(B = 2^{20}\) bytes holds about 400 issuances; the v0.0.1 devnet encodes transactions as JSON with hex fields, about 5 kB each, so about 200. A meter signs once per 10 kWh, not once per kWh, because its records are cumulative. Excess records wait for the next block; since they are cumulative, waiting costs nothing. The cap stays \(B\). If the signer part offers only ML-DSA-87 the signature is 4627 bytes and the counts roughly halve. Throughput at national scale is open item S-4 in [open-items.md](open-items.md).
+The block byte cap \(B\) is a protocol constant. It does not grow with height, with meter count, or with supply. An ML-DSA-44 signature is 2420 bytes [NIST FIPS 204] and the record is 32 bytes. In a binary encoding one issuance is 2452 bytes and a cap of \(B = 2^{20}\) bytes holds about 427; the v0.0.1 devnet encodes transactions as JSON with hex fields, about 4.9 kB each, so about 210. A meter signs once per token, one kilowatt-hour, so every kilowatt-hour is credited on its own. Excess records wait for the next block; since they are cumulative, waiting costs nothing. The cap stays \(B\). If the signer part offers only ML-DSA-87 the signature is 4627 bytes and the counts roughly halve (\(2^{20}/4659 \approx 225\) in binary). Throughput at national scale is open item S-4 in [open-items.md](open-items.md).
 
 ## Unlimited supply
 

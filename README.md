@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Release: **v0.0.1** (documentation edition doc-1.2, 2026-10-09). See [CHANGELOG.md](CHANGELOG.md).
+Release: **v0.0.1** (documentation edition doc-1.3, 2026-10-09). See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -14,7 +14,7 @@ Grids already trade power between regions. The same unit is the proposed trade g
 
 ## Technical statement
 
-Issuance is Proof of Generation. A meter integrates active energy, \(E = \int v(t)\, i(t)\, dt\), in both directions, and mints one token per 1000 Wh of net export, inside the seal. A certified pair of meters, one at the generator terminals and one at the grid connection, signs cumulative records; the ledger credits the smaller of the two hardware token counts. The ledger is public. Transfer is a signed transaction. Non-repudiation is the device signature over the generation record and the account signature over the spend.
+Issuance is Proof of Generation. A meter integrates active energy, \(E = \int v(t)\, i(t)\, dt\), in both directions, and mints one token per 1000 Wh (1 kWh) of net export, inside the seal. Every token is signed as it is minted: a certified pair of meters, one at the generator terminals and one at the grid connection, signs a cumulative record for each kilowatt-hour; the ledger credits the smaller of the two hardware token counts. The ledger is public. Transfer is a signed transaction. Non-repudiation is the device signature over the generation record and the account signature over the spend.
 
 Proof-of-work orders history by hashing and consumes large amounts of electricity to do it [de Vries 2018]. Enerchain does not use that expenditure as the mint. Injection into the grid is the mint, as NRGcoin proposed for renewable injection [Mihaylov et al. 2014]. Households and other small agents that both consume and produce are the prosumer case already described in the market-design literature [Parag and Sovacool 2016]. Price still varies by region, which wholesale markets already do [Schweppe et al. 1988; Hogan 1992].
 
@@ -28,7 +28,7 @@ Proof-of-work orders history by hashing and consumes large amounts of electricit
 
 ## Worked example
 
-A home array delivers 10 kWh more to the grid than the house takes from it. The GRID meter at the connection counts 10 000 export pulses net of import and mints 10 tokens inside the seal; the GEN meter at the array terminals counts what the panels produced. Each meter signs a cumulative record. The ledger checks both signatures and credits min(GEN tokens, GRID tokens) to the owner's account. The holder transfers them with an account signature. A battery that buys from the grid at night and sells back at noon mints nothing.
+A home array delivers 10 kWh more to the grid than the house takes from it. The GRID meter at the connection counts 10 000 export pulses net of import and mints 10 tokens inside the seal, one per 1000 pulses (1 kWh); the GEN meter at the array terminals counts what the panels produced. Each meter signs a cumulative record for every token, so each kilowatt-hour reaches the ledger on its own. The ledger checks both signatures and credits min(GEN tokens, GRID tokens) to the owner's account, one token per kilowatt-hour. The holder transfers them with an account signature. A battery that buys from the grid at night and sells back at noon mints nothing.
 
 ## Status
 
@@ -59,8 +59,8 @@ Start with [docs/how-to.md](docs/how-to.md). It is the reading order, the softwa
 | [Threat model](docs/threat-model.md) | Who might mint falsely, and what stops them? |
 | [Open items](docs/open-items.md) | What is assumed, unverified, or not built? |
 | [Software](docs/software.md) | How do I run the ledger, wallet and devnet? |
-| [Schematic](docs/schematics/mint-path.svg) | Earlier hardware-only mint path. |
-| [Circuit sheets](docs/schematics/README.md) | doc-0.7 IEC-symbol circuits. Superseded by revision B. |
+| [Schematic](docs/schematics/mint-path.svg) | The revision B mint path on one page. |
+| [Circuit sheets](docs/schematics/README.md) | IEC-symbol circuits of revision B, with the design values computed. |
 | [Sign datapath](docs/schematics/crypto-datapath.md) | Doc-0.8 cryptography sketch. Not the tapeout. |
 | [EC-SEAL1](hardware/fab/ec-seal1/MANUFACTURER.md) | Board order, revision B. Parts, pours, netlist. |
 | [Fab notes](hardware/fab/FAB-NOTES.md) | Do not build the doc-0.9 BOM. |

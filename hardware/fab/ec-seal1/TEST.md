@@ -1,6 +1,6 @@
 # EC-SEAL1 test
 
-Edition: v0.0.1 (doc-1.2), board revision B.
+Edition: v0.0.1 (doc-1.3), board revision B.
 
 Every low-voltage net on this board, ground included, is at Line potential. Bench it from a current-limited DC supply first. When the board sees the mains, feed it through an isolation transformer and a series current limiter, and use a differential or isolated probe. Never clip an earthed scope ground to GND.
 
@@ -12,7 +12,7 @@ Every low-voltage net on this board, ground included, is at Line potential. Benc
 
 ## Supply, from DC
 
-4. 300 V DC from a current-limited supply into VBULK (positive) and GND, dropper side disconnected at R1. VRECT is 12.1 V ± 0.5 V. VDD is 3.3 V ± 3 %. QS_VDD is within 20 mV of VDD while ZEROIZE is low.
+4. 300 V DC from a current-limited supply into VBULK (positive) and GND, mains input disconnected at R1. VRECT is 12.1 V ± 0.5 V. VDD is 3.3 V ± 3 %. QS_VDD is within 20 mV of VDD while ZEROIZE is low.
 5. Load VRECT with an extra 40 mA. VRECT stays above 11 V and the LM2936 does not drop out.
 6. STPM32 VDDD is about 1.2 V, produced by the chip, not by the board.
 7. A 16 MHz square wave is on EC-MINT1 XI. STP_EN is low, CAL_LOCKED is low, and no CF pulse is counted until the image is shifted in.
@@ -26,11 +26,11 @@ Every low-voltage net on this board, ground included, is at Line potential. Benc
 ## Provisioning and tokens
 
 11. Shift the calibration image on J5. CAL_LOCKED rises. The image and its lock marker are in FRAM at 0x0100 and 0x0200. On the next boot STP_EN rises with STP_CS_N low, then the transcript is replayed.
-12. 10 000 export pulses produce one UART frame: `EC 01`, a 32-byte record with seq 1, e_exp 10 000, tokens 10, then the signature. `tools/check_schedule.py` is the rule; `enerchain frame verify --pk <meter key> <frame hex>` checks the signature.
+12. 1000 export pulses produce one UART frame: `EC 01`, a 32-byte record with seq 1, e_exp 1000, tokens 1, then the signature. Each further 1000 export pulses produce one more frame (seq 2, tokens 2, and so on). `tools/check_schedule.py` is the rule; `enerchain frame verify --pk <meter key> <frame hex>` checks the signature.
 13. 5000 import pulses followed by 5000 export pulses produce no token.
 14. Remove power between records and in the middle of a pulse burst. After power returns the counters and seq continue from FRAM; nothing is counted twice.
 15. The other board of the pair, same current and voltage, its own key. One board's signature is not an issuance; the ledger mints min(GEN tokens, GRID tokens).
 
 ## Tamper under power
 
-16. Release the spring. Within a millisecond the signer MOSI has carried `5C 5C`; within half a second QS_VDD has collapsed; a further pulse on LED1 produces no frame; VDD stays at 3.3 V.
+16. Release the spring. Within a millisecond the signer MOSI has carried `5C 5C`; within half a second Q5 has opened and QS_VDD has collapsed; a further pulse on LED1 produces no frame; VDD stays at 3.3 V ± 3 % throughout (O-10).

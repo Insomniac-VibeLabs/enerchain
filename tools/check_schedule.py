@@ -5,14 +5,19 @@ hardware/asic/rtl/ec_mint1_schedule.v. No dependencies beyond Python 3.
 Rule: credit = e_exp - e_imp - tokens*Q. An export pulse adds one; at Q a
 token is minted and credit returns to zero. An import pulse subtracts one.
 tokens = floor(max over time of (e_exp - e_imp) / Q).
+Every SIGN_EVERY tokens the die asks the signer for a record; as built that
+is every token, so each kWh of net export is signed and credited on its own.
 """
 
 Q = 1000
+SIGN_EVERY = 1
 
 
 class Schedule:
     def __init__(self) -> None:
         self.e_exp = self.e_imp = self.tokens = self.credit = 0
+        self.since = 0
+        self.records: list[tuple[int, int, int]] = []   # (e_exp, e_imp, tokens)
 
     def exp(self, n: int) -> None:
         for _ in range(n):
@@ -20,6 +25,10 @@ class Schedule:
             if self.credit == Q - 1:
                 self.credit = 0
                 self.tokens += 1
+                self.since += 1
+                if self.since == SIGN_EVERY:
+                    self.since = 0
+                    self.records.append((self.e_exp, self.e_imp, self.tokens))
             else:
                 self.credit += 1
 
@@ -35,6 +44,8 @@ def main() -> None:
     assert s.tokens == 0
     s.exp(1)
     assert (s.tokens, s.credit) == (1, 0)
+    # One kWh of net export is one token and one signed record.
+    assert s.records == [(1000, 0, 1)], s.records
 
     # Splitting an interval must not mint extra tokens.
     a = Schedule()
@@ -63,7 +74,12 @@ def main() -> None:
         best = max(best, d.e_exp - d.e_imp)
         assert d.tokens == best // Q, (step, d.tokens, best)
         assert d.credit == d.e_exp - d.e_imp - d.tokens * Q
-    print("PASS schedule: 1000 net-export Wh -> 1 token, splits and loops mint nothing extra")
+    # A record is built the moment its token is minted, so in every record
+    # e_exp - e_imp is exactly tokens * Q, and tokens * Q <= e_exp.
+    assert len(d.records) == d.tokens
+    for e_exp, e_imp, tok in d.records:
+        assert e_exp - e_imp == tok * Q and tok * Q <= e_exp
+    print("PASS schedule: 1000 net-export Wh (1 kWh) -> 1 token and 1 record, splits and loops mint nothing extra")
 
 
 if __name__ == "__main__":

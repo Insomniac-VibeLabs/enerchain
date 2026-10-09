@@ -39,3 +39,7 @@ jobs:
         run: |
           python3 tools/gen_board.py
           git diff --exit-code -- hardware/fab/ec-seal1
+      - name: Circuit sheets match the netlist and the calculations
+        run: |
+          python3 tools/gen_schematics.py
+          git diff --exit-code -- docs/schematics
