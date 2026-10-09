@@ -68,6 +68,7 @@ Start with [docs/how-to.md](docs/how-to.md). It is the reading order, the softwa
 | [Economics](docs/economics.md) | Who generates, and how do regions trade? |
 | [Interplanetary economics](docs/interplanetary-economics.md) | What does a planetary region prove? |
 | [Governance](docs/governance.md) | Who may change the rules? |
+| [Roadmap](ROADMAP.md) | What comes next, in phases? |
 | [Contributing](CONTRIBUTING.md) | How to propose a change? |
 
 ## Licensing
