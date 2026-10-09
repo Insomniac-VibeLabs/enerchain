@@ -1,0 +1,24 @@
+ref,mpn,manufacturer,value,package,function,qty,notes
+F1,0441.100,Littelfuse,100 mA,5x20 mm,line fuse,1,before the dropper
+RV1,MOV-07D271K,Bourns,270 V,disc,line clamp,1,across L-N
+C1,R46KI322050P0M,KEMET,220 nF X2,box,dropper,1,240 V 50 Hz about 16 mA
+Rin,ERJ-6ENF1000V,Panasonic,100 ohm 1%,0603,inrush,1,series with C1
+BR1,MB6S,onsemi,600 V 0.5 A,SOIC-4,bridge,1,
+D1,BZX84-C12,Nexperia,12 V,SOT-23,clamp,1,about 0.19 W at 16 mA
+C2,EEE-FK1C101P,Panasonic,100 uF 16 V,radial,bulk,1,after bridge
+U1,TPS7A2033PDBVR,Texas Instruments,3.3 V LDO,SOT-23-5,IO rail,1,meter supply
+C3,GRM188R71A106KA73,Murata,10 uF 10 V,0603,LDO out,1,
+Rs,WSBS5216L1000JT,Vishay,100 uohm 5%,5216,shunt,1,0.16 W at 40 A
+R1a,TNPV1206499KBE,Vishay,499 kohm 0.1%,1206,divider,1,>=200 V
+R1b,TNPV1206499KBE,Vishay,499 kohm 0.1%,1206,divider,1,series with R1a
+R2,TNPW06032K08BE,Vishay,2.08 kohm 0.1%,0603,divider low,1,240 Vrms to 0.50 Vrms
+C4,GRM1885C1H102JA01,Murata,1 nF,0603,anti-alias,1,across R2
+U2,STPM32TR,STMicroelectronics,energy ASIC,QFN-24,metrology,1,CF = 1000 imp/kWh
+Y1,ABS25-16.000MHZ,Abracon,16 MHz,HC-49,clock,1,STPM32 input
+C5,GRM155R71H104KE14,Murata,100 nF,0402,decouple,4,at U1 U2 U3 U4
+U3,VaultIC409,SEALSQ,ML-DSA SE,QFN32,sign,1,quote part; key on die
+R3,RC0603FR-07100KL,Yageo,100 kohm,0603,tamper pull-up,1,mesh to ZEROIZE
+U4,MDBT50Q-P1MV2,Raytac,nRF52840 module,module,radio,1,sleep; no key
+L1,LQP15MN,Murata,match,0402,antenna match,1,per module datasheet
+C6,GJM1555C1H,Murata,match,0402,antenna match,1,per module datasheet
+AE1,2450AT18A100,Johanson,2.4 GHz,chip,antenna,1,

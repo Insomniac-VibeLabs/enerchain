@@ -1,0 +1,33 @@
+# Enerchain mint board netlist
+# Edition doc-0.9. Not a Gerber. Nets named for layout.
+
+NET L_FEEDER
+ F1.1
+NET L_FUSED
+ F1.2 RV1.1 C1.1 Rin.1 R1a.1
+NET N_FEEDER
+ RV1.2 BR1.3 R1b_return Rs.force_out
+NET DROP_AC
+ Rin.2 C1.2 BR1.1
+NET VRECT
+ BR1.2 D1.1 C2.1 U1.IN
+NET GND
+ BR1.4 D1.2 C2.2 U1.GND C3.2 U2.DGND U3.VSS U4.GND R2.2 C4.2 Rs.sense_n
+NET VDD_3V3
+ U1.OUT C3.1 U2.DVDD U3.VDD U4.VDD R3.1
+NET SHUNT_FORCE_IN
+ Rs.force_in
+NET SHUNT_SENSE_P
+ Rs.sense_p U2.IP
+NET SHUNT_SENSE_N
+ Rs.sense_n U2.IN
+NET VDIV
+ R1b.2 R2.1 C4.1 U2.VP
+NET CF
+ U2.CF U3.CF_IN
+NET ZEROIZE
+ R3.2 U3.ZEROIZE MESH.1
+NET UART_TX
+ U3.TX U4.RX
+NET RF
+ U4.ANT L1.1 C6.1 AE1.1

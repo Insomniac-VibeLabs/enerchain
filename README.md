@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Edition: doc-0.8 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
+Edition: doc-0.9 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -50,6 +50,7 @@ Start with [docs/how-to.md](docs/how-to.md). The claim itself is in [docs/hypoth
 | [Schematic](docs/schematics/mint-path.svg) | Hardware-only mint path. |
 | [Circuit sheets](docs/schematics/README.md) | IEC-symbol circuits for each block. |
 | [Sign datapath](docs/schematics/crypto-datapath.md) | Hardwired cryptography and ledger update. |
+| [Fab pack](hardware/fab/FAB-NOTES.md) | BOM and netlist. Not Gerber, not a tapeout. |
 | [Economics](docs/economics.md) | Who generates, and how do regions trade? |
 | [Interplanetary economics](docs/interplanetary-economics.md) | What does a planetary region prove? |
 | [Governance](docs/governance.md) | Who may change the rules? |

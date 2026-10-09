@@ -1,6 +1,6 @@
 # How to read and change Enerchain documents
 
-Edition: doc-0.8 (2026-10-08). This is a documentation edition, not a software release.
+Edition: doc-0.9 (2026-10-08). This is a documentation edition, not a software release.
 
 ## What this repository is
 
@@ -20,7 +20,8 @@ Enerchain is the working notes for an electricity-denominated public currency. I
 10. [Interplanetary economics](interplanetary-economics.md) — the token as proof of local generation, not an export of energy.
 11. [Governance](governance.md) — who may change the rules.
 12. [Roadmap](../ROADMAP.md) — research phases. Phase 1 is current.
-13. [References](references.md) — sources used in doc-0.8.
+13. [References](references.md) — sources used in doc-0.9.
+14. [Fab pack](../hardware/fab/FAB-NOTES.md) — what a board house can be sent, and what a foundry cannot.
 
 ## How a concept change is made
 
