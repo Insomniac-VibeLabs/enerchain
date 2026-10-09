@@ -1,0 +1,9 @@
+Enerchain
+
+Software, firmware, tools, tests and documentation:
+  SPDX-License-Identifier: Apache-2.0
+  See LICENSE.
+
+Hardware designs (hardware/):
+  SPDX-License-Identifier: CERN-OHL-S-2.0
+  See LICENSE-HARDWARE.

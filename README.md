@@ -70,4 +70,13 @@ Start with [docs/how-to.md](docs/how-to.md). It is the reading order, the softwa
 | [Governance](docs/governance.md) | Who may change the rules? |
 | [Contributing](CONTRIBUTING.md) | How to propose a change? |
 
-License: Apache-2.0. See [LICENSE](LICENSE).
+## Licensing
+
+This repository uses two licenses, split by content:
+
+| Path | License | File |
+| --- | --- | --- |
+| `enerchain/`, `firmware/`, `tools/`, `tests/`, `docs/`, and the top-level documents | Apache-2.0 | [LICENSE](LICENSE) |
+| `hardware/` (EC-SEAL1 board files, EC-MINT1 RTL and chip handoff) | CERN-OHL-S-2.0 | [LICENSE-HARDWARE](LICENSE-HARDWARE) |
+
+Apache-2.0 is permissive and includes a patent grant. CERN-OHL-S-2.0 is a strongly reciprocal hardware license: anyone who distributes or manufactures a design derived from `hardware/` must make their modified design files available under the same license. See [NOTICE](NOTICE) for the SPDX identifiers.
