@@ -70,6 +70,7 @@ Start with [docs/how-to.md](docs/how-to.md). It is the reading order, the softwa
 | [Governance](docs/governance.md) | Who may change the rules? |
 | [Roadmap](ROADMAP.md) | What comes next, in phases? |
 | [Contributing](CONTRIBUTING.md) | How to propose a change? |
+| [AGENTS.md](AGENTS.md) | How do coding agents set up, check, and change the repository safely? |
 
 ## Licensing
 
