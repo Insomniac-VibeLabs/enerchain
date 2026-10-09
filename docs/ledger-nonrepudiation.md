@@ -1,6 +1,6 @@
 # Ledger nonrepudiation and quantum-resistant issuance
 
-Edition: doc-0.5 (2026-10-08).
+Edition: v0.0.1 (doc-1.2, 2026-10-09). The payload, the acceptance rule and the block arithmetic are updated to the v0.0.1 record; the argument is unchanged.
 
 The token is proof that a sealed core measured an integral. This note is how that proof is posted on a public ledger, why the signature scheme is quantum-resistant rather than quantum-proof, and why the protocol has no difficulty and no supply cap.
 
@@ -13,12 +13,14 @@ The meter signs the watt-hours with a key that never leaves the seal. The ledger
 The sealed core from [hardware-binding.md](hardware-binding.md) holds a signing key \(sk\) and a certified public key \(pk\). For an interval it produces the issuance payload
 
 \[
-m = (\text{meter id},\; t_0,\; t_1,\; w,\; n,\; W,\; r,\; \text{class})
+m = (\text{meter id},\; \text{role},\; \text{class},\; \text{seq},\; E_x,\; E_m,\; T,\; \text{cal CRC})
 \]
+
+(32 bytes; [hardware/asic/spec.md](../hardware/asic/spec.md))
 
 and a signature \(\sigma = \mathrm{Sign}(sk, m)\). The host can broadcast \((m, \sigma)\). It cannot produce a valid \(\sigma\) for a different \(m\).
 
-A ledger node accepts the record into a block if and only if \(\mathrm{Verify}(pk, m, \sigma) = 1\), \(pk\) is the certified key for that meter, and \(W\) extends the last accepted cumulative for that meter. The block commits to the record by a hash chain
+A ledger node accepts the record into a block if and only if \(\mathrm{Verify}(pk, m, \sigma) = 1\), \(pk\) is the certified key for that meter, the calibration CRC matches the certificate, \(\text{seq}\) is greater than the last accepted sequence number for that meter, and none of \(E_x, E_m, T\) is lower than the last accepted value. The pair's owner is then credited with \(\min(T_{GEN}, T_{GRID})\) less what the pair has already been credited. The block commits to the record by a hash chain
 
 \[
 H_k = \mathrm{Hash}(H_{k-1} \,\|\, \text{block body}_k).
@@ -42,19 +44,19 @@ Quantum-proof would mean security even if the computational assumption is false.
 
 ## No difficulty, fixed block size
 
-There is no difficulty parameter. Issuance is \(n = \lfloor (r+w)/q \rfloor\) from the sealed registers, not a puzzle. Nothing in the protocol retargets \(q\) or a hash threshold as more meters appear. Block time is a clock constant. A block is valid when its hash chain links and its signatures verify, not when a hash is below a moving target.
+There is no difficulty parameter. Issuance is the token count \(T\) from the sealed registers, not a puzzle. Nothing in the protocol retargets \(q\) or a hash threshold as more meters appear. Block time is a clock constant. A block is valid when its hash chain links and its signatures verify, not when a hash is below a moving target.
 
-The block byte cap \(B\) is a protocol constant. It does not grow with height, with meter count, or with supply. An ML-DSA-44 signature is 2420 bytes [NIST FIPS 204]. With a few hundred bytes of payload, one issuance occupies on the order of 2.7 kB. A cap of \(B = 2^{20}\) bytes therefore holds on the order of 400 issuances. Excess intervals wait for the next block. The cap stays \(B\).
+The block byte cap \(B\) is a protocol constant. It does not grow with height, with meter count, or with supply. An ML-DSA-44 signature is 2420 bytes [NIST FIPS 204] and the record is 32 bytes. In a binary encoding one issuance is about 2.5 kB and a cap of \(B = 2^{20}\) bytes holds about 400 issuances; the v0.0.1 devnet encodes transactions as JSON with hex fields, about 5 kB each, so about 200. A meter signs once per 10 kWh, not once per kWh, because its records are cumulative. Excess records wait for the next block; since they are cumulative, waiting costs nothing. The cap stays \(B\). If the signer part offers only ML-DSA-87 the signature is 4627 bytes and the counts roughly halve. Throughput at national scale is open item S-4 in [open-items.md](open-items.md).
 
 ## Unlimited supply
 
 There is no maximum \(S\). After all accepted issuances,
 
 \[
-S = \sum_i n_i = \sum_i \left\lfloor \frac{r_i + w_i}{q} \right\rfloor,
+S = \sum_{\text{pairs } p} \min\bigl(T_{GEN}(p),\, T_{GRID}(p)\bigr),
 \]
 
-with no terminal term. \(S\) tracks accepted watt-hours. It is not a monetary cap, and it is not limited by a halving schedule. A transfer moves an existing balance. It does not mint, and it does not require a difficulty increase to stay valid.
+with no terminal term. \(S\) tracks accepted net-export watt-hours. It is not a monetary cap, and it is not limited by a halving schedule. A transfer moves an existing balance. It does not mint, and it does not require a difficulty increase to stay valid.
 
 ## Sources
 

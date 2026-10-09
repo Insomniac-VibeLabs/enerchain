@@ -1,6 +1,6 @@
 # Hypothesis
 
-Edition: doc-0.3 (2026-10-08).
+Edition: doc-0.3 (2026-10-08). Unchanged in v0.0.1; the issuance event is now net export, see [hardware-binding.md](hardware-binding.md).
 
 ## Plain language
 
@@ -12,6 +12,6 @@ Trade follows the same pattern grids already use. Regions exchange power. As set
 
 ## Technical statement
 
-Enerchain’s issuance event is active energy delivered across a meter into a grid, integrated from voltage and current over a stated interval. A secure element in the meter holds the signing key and will emit coins only as a published function of that integral. The resulting balance is a public-ledger asset: transferable, non-repudiable under the device signature, and ordered by the ledger.
+Enerchain’s issuance event is active energy delivered across a meter into a grid, net of energy drawn from it, integrated from voltage and current. A secure element in the meter holds the signing key and will emit coins only as a published function of that integral. The resulting balance is a public-ledger asset: transferable, non-repudiable under the device signature, and ordered by the ledger.
 
 Proof-of-work currencies already price block production in electricity [de Vries 2018]. Enerchain keeps the public ledger and the non-repudiation property, and replaces the hashing expenditure with evidenced injection. A peer-reviewed predecessor minted a unit for renewable injection and cleared its price on an exchange [Mihaylov et al. 2014]. Prosumers — agents who both consume and produce — are already a market-design problem, not a slogan [Parag and Sovacool 2016]. Locational prices already differ by region inside one interconnected system [Schweppe et al. 1988; Hogan 1992]. The long-range extension is to treat a planet or a system as another such region, with the same unit as the trade instrument.

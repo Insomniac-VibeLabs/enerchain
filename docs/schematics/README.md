@@ -1,6 +1,6 @@
 # Circuit sheets
 
-Edition: doc-0.7 (2026-10-08). Symbols follow IEC 60617: a resistor is a rectangle, a capacitor is two plates, a diode is a triangle and bar, ground is the stacked earth mark. These are proposed circuits, not a built board.
+Edition: doc-0.7 (2026-10-08). **Superseded for building** by EC-SEAL1 revision B ([../../hardware/fab/ec-seal1/CIRCUITS.md](../../hardware/fab/ec-seal1/CIRCUITS.md), v0.0.1). Sheet 01 (X2 dropper), sheet 03 (divider) and sheet 06 (tamper polarity) draw circuits that were replaced; the ground reference on every sheet is the doc-1.1 Neutral reference, which is wrong for a Line shunt. They remain as the design history. Symbols follow IEC 60617: a resistor is a rectangle, a capacitor is two plates, a diode is a triangle and bar, ground is the stacked earth mark. These are proposed circuits, not a built board.
 
 The block sketch remains [mint-path.svg](mint-path.svg). Each block now has its own sheet.
 

@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Edition: doc-1.1 (2026-10-09). See [CHANGELOG.md](CHANGELOG.md).
+Release: **v0.0.1** (documentation edition doc-1.2, 2026-10-09). See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -14,44 +14,55 @@ Grids already trade power between regions. The same unit is the proposed trade g
 
 ## Technical statement
 
-Issuance is Proof of Generation. A meter integrates active energy, \(E = \int v(t)\, i(t)\, dt\), signs the interval, and mints only the units that function allows for that integral. The ledger is public. Transfer is a signed transaction. Non-repudiation is the device signature over the generation record and the account signature over the spend.
+Issuance is Proof of Generation. A meter integrates active energy, \(E = \int v(t)\, i(t)\, dt\), in both directions, and mints one token per 1000 Wh of net export, inside the seal. A certified pair of meters, one at the generator terminals and one at the grid connection, signs cumulative records; the ledger credits the smaller of the two hardware token counts. The ledger is public. Transfer is a signed transaction. Non-repudiation is the device signature over the generation record and the account signature over the spend.
 
 Proof-of-work orders history by hashing and consumes large amounts of electricity to do it [de Vries 2018]. Enerchain does not use that expenditure as the mint. Injection into the grid is the mint, as NRGcoin proposed for renewable injection [Mihaylov et al. 2014]. Households and other small agents that both consume and produce are the prosumer case already described in the market-design literature [Parag and Sovacool 2016]. Price still varies by region, which wholesale markets already do [Schweppe et al. 1988; Hogan 1992].
 
 ## Design goals
 
 - Hardware-locked issuance from voltage, current, and time.
-- Coins only for energy the meter accepted as delivered to the grid.
+- Coins only for energy the meters accepted as delivered to the grid, net of energy taken from it.
 - Public ledger, easy transfer, non-repudiation.
 - Individuals and larger plants on the same evidence rule.
 - One measurement language from a feeder to a planetary region.
 
 ## Worked example
 
-A home array delivers 10 kWh in one hour. The meter records voltage, current, power factor, and the integral, then signs. The protocol mints the units that integral allows. The holder transfers them with an account signature. Validators check both signatures and that the interval was not already minted.
+A home array delivers 10 kWh more to the grid than the house takes from it. The GRID meter at the connection counts 10 000 export pulses net of import and mints 10 tokens inside the seal; the GEN meter at the array terminals counts what the panels produced. Each meter signs a cumulative record. The ledger checks both signatures and credits min(GEN tokens, GRID tokens) to the owner's account. The holder transfers them with an account signature. A battery that buys from the grid at night and sells back at noon mints nothing.
 
 ## Status
 
-The manufacturable design is doc-1.1, in [SOLUTION.md](SOLUTION.md). It is hardware: a sealed meter board, a small schedule chip, and a catalog ML-DSA secure element. Software does not choose the token count. There is still no GDSII, and the QFN fanout is a netlist the board house executes, not a finished short-free escape. Nothing in this repository has been built or taped out.
+v0.0.1 is the first version with software you can run:
+
+- **Ledger, wallet and devnet** in Python (`enerchain/`), with the issuance rule, k-of-n meter certification, transfers and proof-of-authority blocks. `pip install -e '.[test]' && pytest && enerchain demo`. See [docs/software.md](docs/software.md).
+- **EC-MINT1 RTL** that simulates end to end (provisioning, net-export minting, power cuts, signer refusal, zeroize) and matches the Python meter model byte for byte.
+- **QS7001 signing image** with one-time keygen, a persistent wipe and a rollback guard, unit-tested on the host.
+- **EC-SEAL1 revision B** board files from `tools/gen_board.py`, after an electrical review that found the doc-1.1 board could not have worked: [docs/electrical-review.md](docs/electrical-review.md).
+
+Nothing has been built or taped out. Revision B is a bench prototype: opening the cover while the meter is unpowered is not yet detected. [docs/open-items.md](docs/open-items.md) lists that and every other assumption still to verify. There is still no GDSII.
 
 ## Documents
 
-Start with [docs/how-to.md](docs/how-to.md). It is the reading order and the build. The claim itself is in [docs/hypothesis.md](docs/hypothesis.md). Sources are in [docs/references.md](docs/references.md).
+Start with [docs/how-to.md](docs/how-to.md). It is the reading order, the software setup, and the build. The claim itself is in [docs/hypothesis.md](docs/hypothesis.md). Sources are in [docs/references.md](docs/references.md).
 
 | Document | Question it answers |
 | --- | --- |
 | [Hypothesis](docs/hypothesis.md) | What is being proposed? |
 | [Problem statement](docs/problem-statement.md) | Why an electricity currency? |
 | [Whitepaper](WHITEPAPER.md) | How issuance and transfer work? |
-| [Solution](SOLUTION.md) | Why hardware, and what was wrong in doc-0.9? |
+| [Solution](SOLUTION.md) | Why hardware, and what changed in v0.0.1? |
 | [Energy verification](docs/energy-verification.md) | How is the hardware lock specified? |
 | [Hardware binding](docs/hardware-binding.md) | How does the sealed integral sign the token? |
 | [Ledger nonrepudiation](docs/ledger-nonrepudiation.md) | How does that signature become a public, quantum-resistant record? |
 | [Meter burden](docs/meter-burden.md) | How little electricity may the mint path use? |
+| [Electrical review](docs/electrical-review.md) | What was wrong with the doc-1.1 board, and what revision B does instead? |
+| [Threat model](docs/threat-model.md) | Who might mint falsely, and what stops them? |
+| [Open items](docs/open-items.md) | What is assumed, unverified, or not built? |
+| [Software](docs/software.md) | How do I run the ledger, wallet and devnet? |
 | [Schematic](docs/schematics/mint-path.svg) | Earlier hardware-only mint path. |
-| [Circuit sheets](docs/schematics/README.md) | IEC-symbol circuits. Not the fab artwork. |
+| [Circuit sheets](docs/schematics/README.md) | doc-0.7 IEC-symbol circuits. Superseded by revision B. |
 | [Sign datapath](docs/schematics/crypto-datapath.md) | Doc-0.8 cryptography sketch. Not the tapeout. |
-| [EC-SEAL1](hardware/fab/ec-seal1/MANUFACTURER.md) | Board order. Parts, pours, netlist. |
+| [EC-SEAL1](hardware/fab/ec-seal1/MANUFACTURER.md) | Board order, revision B. Parts, pours, netlist. |
 | [Fab notes](hardware/fab/FAB-NOTES.md) | Do not build the doc-0.9 BOM. |
 | [EC-MINT1](hardware/asic/README.md) | Chip handoff. Not GDSII. |
 | [Economics](docs/economics.md) | Who generates, and how do regions trade? |

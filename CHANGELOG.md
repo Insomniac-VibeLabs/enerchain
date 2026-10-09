@@ -1,6 +1,14 @@
-# Documentation revision log
+# Revision log
 
-Enerchain has no software release. Documentation editions use the `doc-` prefix so they cannot be confused with future software release tags (`v1`, `v2`, …), which only increment and would otherwise collide with document references.
+Software releases are tagged `vX.Y.Z`. Documentation editions keep the `doc-` prefix so a document can be cited apart from the code. Each software release names the documentation edition it ships with.
+
+## Software releases
+
+| Release | Date | Docs | Scope |
+| --- | --- | --- | --- |
+| v0.0.1 | 2026-10-09 | doc-1.2 | First runnable release. `enerchain` Python package: 32-byte meter record, bit-exact EC-MINT1 and QS7001 model, ML-DSA keys, k-of-n meter and pair certification, issuance rule min(GEN, GRID) on cumulative records, transfers, proof-of-authority blocks with SHA-384 roots, wallet, devnet CLI, pytest suite. EC-MINT1 RTL rewritten (net-export schedule, 48-bit counters, F-RAM persistence, signer ready-poll, streamed signature) with an end-to-end testbench and an RTL-vs-model check. QS7001 image: one keygen, persistent wipe, rollback guard, host test. EC-SEAL1 revision B after an electrical review. CI. |
+
+## Documentation editions
 
 | Edition | Date | Scope |
 | --- | --- | --- |
@@ -15,5 +23,6 @@ Enerchain has no software release. Documentation editions use the `doc-` prefix 
 | doc-0.9 | 2026-10-08 | Added a PCB order pack: BOM, netlist, fab notes. No Gerber and no GDSII. |
 | doc-1.0 | 2026-10-08 | Added the EC-MINT1 ASIC handoff: spec, RTL, constraints. Not a tapeout. |
 | doc-1.1 | 2026-10-09 | Chose hardware over a software wallet and over an on-die ML-DSA core. EC-SEAL1 board order, EC-MINT1 schedule die, QS7001 signing oracle. Corrected the doc-0.9 MOV, LDO, and divider. The how-to is the reading order and the build. |
+| doc-1.2 | 2026-10-09 | Ships with v0.0.1. Electrical review of doc-1.1 ([docs/electrical-review.md](docs/electrical-review.md)): logic ground moved to Line at the shunt, LNK304 supply replaces the reversed X2 dropper, P-FET signer rail, F-RAM for counters and calibration, import pulses. Net-export schedule and the pair rule replace per-interval agreement. New: threat model, open items, software guide, prior art in the whitepaper. |
 
-Software release tags, when they exist, must not be used as documentation edition numbers. Cite a document as `path@doc-1.1` until a later edition supersedes it.
+Software release tags must not be used as documentation edition numbers. Cite a document as `path@doc-1.2` until a later edition supersedes it.

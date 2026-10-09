@@ -1,6 +1,6 @@
 # Meter burden and ledger energy
 
-Edition: doc-0.6 (2026-10-08).
+Edition: v0.0.1 (doc-1.2, 2026-10-09). The supply and the signing cadence are updated to EC-SEAL1 revision B; the cap is unchanged.
 
 Minting and posting use electricity. The mint path is a meter, so its draw is capped at a present-day meter. The ledger is not a proof-of-work puzzle, so posting is a signature check, not a mining load.
 
@@ -22,25 +22,27 @@ At that cap, continuous draw over a year is
 E_{\text{year}} = 2\ \text{W} \times 24 \times 365 = 17.5\ \text{kWh}.
 \]
 
-A site that delivers 1 kW average, 8760 kWh in a year, spends 0.2% of that delivery on the mint path at the cap. The design target is under 1.5 W, in line with meters already on walls. The supply tap sits before the shunt, so this trickle is not itself minted.
+A site that delivers 1 kW average, 8760 kWh in a year, spends 0.2% of that delivery on the mint path at the cap. The design target is under 1.5 W, in line with meters already on walls. The supply is taken on the grid side of the shunt, so this trickle is neither counted as export nor as import.
+
+Revision B's budget: an LNK304 buck to 12 V carries about 30 mA of logic (through the 3.3 V regulator) and up to 40 mA average for the radio. At an assumed 60 % light-load efficiency that is about 1.4 W with the radio transmitting and well under 1 W with it asleep, and a few volt-amperes. The doc-1.1 capacitive dropper could not carry the logic: see [electrical-review.md](electrical-review.md) C-3.
 
 ## Signature cost
 
-ML-DSA-44, the smaller NIST parameter, costs on the order of 19 mJ for a sign cycle on a small microcontroller, using a 79 mW active model [software measurement, RP2040 class]. A hardware engine in a secure element is the same order or lower, because it is not clocking a general core. One signature per accepted kilowatt-hour is
+ML-DSA-44, the smaller NIST parameter, costs on the order of 19 mJ for a sign cycle on a small microcontroller, using a 79 mW active model [software measurement, RP2040 class]. A hardware engine in a secure element is the same order or lower, because it is not clocking a general core. The meter signs once per 10 tokens, 10 kWh, because its records are cumulative. That is
 
 \[
-\frac{0.019\ \text{J}}{3.6 \times 10^{6}\ \text{J}} \approx 5 \times 10^{-9}
+\frac{0.019\ \text{J}}{3.6 \times 10^{7}\ \text{J}} \approx 5 \times 10^{-10}
 \]
 
 of the energy being attested. The continuous meter supply dominates. The signature does not.
 
-The ledger note had used ML-DSA-65. For this budget the meter key is ML-DSA-44. The signature is 2420 bytes rather than 3309 [NIST FIPS 204]. A fixed \(2^{20}\)-byte block then holds on the order of 400 issuances instead of 291. The cap \(B\) does not change. Airtime falls with the shorter signature, which is the radio part of the energy.
+The ledger note had used ML-DSA-65. For this budget the meter key is ML-DSA-44. The signature is 2420 bytes rather than 3309 [NIST FIPS 204]. A fixed \(2^{20}\)-byte block then holds on the order of 400 issuances in a binary encoding instead of 291 (about 200 in the v0.0.1 devnet's JSON encoding). The cap \(B\) does not change. Airtime falls with the shorter signature, which is the radio part of the energy.
 
 ## Ledger cost
 
 There is no difficulty and no hash contest, so a node does not burn power to win a block. Acceptance is \(\mathrm{Verify}(pk, m, \sigma)\) plus the hash-chain link. Verification is the cheaper half of an ML-DSA cycle. At the same 79 mW model, a few milliseconds of verify is well under 1 mJ per issuance. A full block of a few hundred issuances is under 1 J at the node. That is the ledger update. It is not comparable to proof-of-work ordering, whose electricity cost is the load de Vries measured [de Vries 2018].
 
-Posting is duty-cycled. The core signs when the residual register crosses \(q\). A 10 mW radio on for 100 ms costs 1 mJ. The radio sleeps otherwise. A site that posts once per kilowatt-hour does not hold a transceiver in receive.
+Posting is duty-cycled. The core signs once per ten tokens. A frame is about 2.5 kB; a 10 mW radio on for a second costs 10 mJ. The radio sleeps otherwise and has no receive path on the board.
 
 ## What this refuses
 
