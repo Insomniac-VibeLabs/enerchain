@@ -12,6 +12,68 @@ The reason to denominate money this way is the direction of the technical econom
 
 Grids already trade power between regions. The same unit is the proposed trade good when the region is a planet or a solar system.
 
+## How it works
+
+### Plain language
+
+A site has two sealed meters. One sits at the solar array or generator, the other where the site connects to the grid. Each meter counts energy in both directions and makes one token for every kilowatt-hour that leaves for the grid, after subtracting what came in. Each token is a signed record. A public ledger checks the signatures and pays the site owner the smaller of the two meters' counts. After that, tokens move between accounts like any other public-ledger asset.
+
+### The whole system
+
+```mermaid
+flowchart TB
+    subgraph SITE["Site (one GEN/GRID pair)"]
+        direction LR
+        PV["Solar array<br/>or generator"] -- energy --> GEN["GEN meter<br/>(EC-SEAL1)"]
+        GEN -- energy --> BUS["Site wiring<br/>house load, battery"]
+        BUS -- energy --> GRIDM["GRID meter<br/>(EC-SEAL1)"]
+    end
+    GRIDM <-- "export / import" --> UTIL[("Utility grid")]
+
+    GEN -. "signed record<br/>every kWh" .-> LEDGER
+    GRIDM -. "signed record<br/>every kWh" .-> LEDGER
+
+    CERT["Certifiers<br/>(k of n)"] -- "meter_cert, pair_cert" --> LEDGER
+
+    subgraph CHAIN["Public ledger (proof-of-authority validators)"]
+        direction LR
+        LEDGER["Issuance rule<br/>verify ML-DSA-44 signature,<br/>calibration CRC, seq rises,<br/>no counter falls"]
+        LEDGER -- "credit min(T_GEN, T_GRID)<br/>less what was already credited" --> OWNER["Owner account"]
+        OWNER -- "transfer<br/>(ML-DSA-65 account signature)" --> OTHER["Any other account"]
+    end
+```
+
+- **Two meters, one minimum.** The GEN meter shows the energy was generated. The GRID meter shows it left the site, net of what came in. The ledger credits `min(T_GEN − base_GEN, T_GRID − base_GRID)`, so one meter cannot mint alone.
+- **Cumulative records.** Every record carries running totals, so a late or lost record costs nothing; the next one carries the totals. A replayed record fails the `seq` check.
+- **Net export only.** A battery that buys from the grid at night and sells back at noon does not raise the net-export high-water mark, so it mints nothing.
+
+### Inside one sealed meter
+
+```mermaid
+flowchart LR
+    MAINS["Line / Neutral"] --> FE
+
+    subgraph SEAL["Sealed enclosure (EC-SEAL1)"]
+        FE["Shunt + voltage divider"] --> STPM["STPM32 metrology<br/>E = ∫ v·i dt"]
+        STPM -- "CF_EXP / CF_IMP<br/>1 pulse = 1 Wh" --> MINT
+        MINT["EC-MINT1 schedule die<br/>no CPU, no host write port<br/>1 token per 1000 Wh net export"]
+        FRAM[("F-RAM<br/>counters, seq,<br/>calibration image")]
+        QS["QS7001 secure element<br/>ML-DSA-44 key<br/>signs only rising counters"]
+        TAMPER["Cover mesh switch,<br/>light sensor"]
+        MINT <-- SPI --> FRAM
+        MINT -- "32-byte record (SPI)" --> QS
+        QS -- "2420-byte signature" --> MINT
+        TAMPER -- ZEROIZE --> MINT
+        TAMPER -- ZEROIZE --> QS
+        MINT -. "erase key" .-> QS
+    end
+
+    MINT -- "UART frame, 2454 bytes<br/>EC 01 + record + signature" --> RADIO["Radio<br/>transmit only"]
+    RADIO --> NET(["Network → ledger"])
+```
+
+EC-MINT1 is the only SPI master the signer and the F-RAM ever see. The radio cannot write back, so nothing outside the die can set a counter or choose what gets signed. Opening the cover while the meter is powered erases the key; opening it while unpowered is not yet detected (open item O-1). The chip is specified in [hardware/asic/spec.md](hardware/asic/spec.md), and the board wiring is [docs/schematics/mint-path.svg](docs/schematics/mint-path.svg).
+
 ## Technical statement
 
 Issuance is Proof of Generation. A meter integrates active energy, \(E = \int v(t)\, i(t)\, dt\), in both directions, and mints one token per 1000 Wh (1 kWh) of net export, inside the seal. Every token is signed as it is minted: a certified pair of meters, one at the generator terminals and one at the grid connection, signs a cumulative record for each kilowatt-hour; the ledger credits the smaller of the two hardware token counts. The ledger is public. Transfer is a signed transaction. Non-repudiation is the device signature over the generation record and the account signature over the spend.
