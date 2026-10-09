@@ -66,7 +66,7 @@ The following sit inside one tamper-responding enclosure, on the conductor that 
 - secure element holding the signing key
 - mesh, light sensor, and temperature sensor tied to key zeroization
 
-The host processor that talks to the network is outside the core. It can submit the signed payload. It cannot increment \(W\) or ask the element to sign a different \(n\). Legal-metrology software guidance for active-energy meters already separates legally relevant measurement software from the rest of the instrument and requires that an alteration be detectable [WELMEC Guide 7.2]. Enerchain uses that split: only the metrology image can touch the registers, and its hash is inside the signed payload.
+The host processor that talks to the network is outside the core. It can submit the signed payload. It cannot increment \(W\) or ask the element to sign a different \(n\). doc-0.6 removes the host from the mint path entirely: the metrology core pulses, the element signs, a slept radio forwards. Draw is capped at a present-day meter in [meter-burden.md](meter-burden.md). The wiring is [schematics/mint-path.svg](schematics/mint-path.svg).
 
 Identity of the core is bound to the silicon, not to a sticker. SRAM startup state used as a physically unclonable identifier is a published meter-security construction [Rincón, Melo, Farias, and Carmo 2021]. The certification record maps that identifier to the device public key. A cloned board that does not reproduce the identifier does not match the certified key.
 

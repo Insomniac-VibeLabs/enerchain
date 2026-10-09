@@ -64,6 +64,14 @@ NIST. (2024). *FIPS 204: Module-Lattice-Based Digital Signature Standard*. https
 
 NIST. (2024). *FIPS 205: Stateless Hash-Based Digital Signature Standard*. https://doi.org/10.6028/NIST.FIPS.205
 
+## Meter burden
+
+IEC 62052-11. Electricity metering equipment — General requirements, tests and test conditions. Voltage-circuit and current-circuit consumption.
+
+Günther, R. (2021). Self-consumption in the current circuit. CLOU Global. https://clouglobal.com/self-consumption-in-the-current-circuit/
+
+The cap and the schematic are in [meter-burden.md](meter-burden.md) and [schematics/mint-path.svg](schematics/mint-path.svg).
+
 ## Interplanetary links and local energy
 
 Burleigh, S., Hooke, A., Torgerson, L., Fall, K., Cerf, V., Durst, B., & Scott, K. (2003). Delay-tolerant networking: An approach to interplanetary Internet. *IEEE Communications Magazine*, 41(6), 128–136. https://doi.org/10.1109/MCOM.2003.1204759

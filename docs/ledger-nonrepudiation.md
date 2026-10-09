@@ -32,7 +32,7 @@ Account transfers use a second key pair, also post-quantum, so a spend is the sa
 
 Shor’s algorithm factors and computes discrete logarithms in polynomial time on a large quantum computer [Shor 1997]. RSA and elliptic-curve signatures, including the ECDSA used by current public chains, fall under that result. A ledger that still used those schemes would not keep the nonrepudiation property after such a machine exists.
 
-NIST has standardized two signature families against that adversary. ML-DSA (FIPS 204) is a module-lattice signature, derived from CRYSTALS-Dilithium. SLH-DSA (FIPS 205) is a stateless hash-based signature, derived from SPHINCS+. NIST’s statement for ML-DSA is that it is believed secure against an adversary with a large-scale quantum computer [NIST FIPS 204]. Enerchain uses ML-DSA for meter and account signatures. SLH-DSA is the fallback if a lattice assumption fails, because its security reduces to the hash, not to a lattice problem [NIST FIPS 205].
+NIST has standardized two signature families against that adversary. ML-DSA (FIPS 204) is a module-lattice signature, derived from CRYSTALS-Dilithium. SLH-DSA (FIPS 205) is a stateless hash-based signature, derived from SPHINCS+. NIST’s statement for ML-DSA is that it is believed secure against an adversary with a large-scale quantum computer [NIST FIPS 204]. Enerchain uses ML-DSA-44 for the meter key so the signature stays short and the sign energy stays on the order of 20 mJ. SLH-DSA remains the fallback if a lattice assumption fails. Account keys may use ML-DSA-65. The draw of the mint path is capped in [meter-burden.md](meter-burden.md). The hardware path is [schematics/mint-path.svg](schematics/mint-path.svg).
 
 The hash in the chain is SHA-384. Grover’s algorithm gives a quadratic speedup for preimage search, not the exponential break Shor gives against discrete log [Grover 1996]. A 384-bit hash keeps a collision and preimage margin after that quadratic loss. The hash does not make the signature quantum-proof. It keeps the chain at the same class of assumption as the hash-based fallback.
 
@@ -44,13 +44,7 @@ Quantum-proof would mean security even if the computational assumption is false.
 
 There is no difficulty parameter. Issuance is \(n = \lfloor (r+w)/q \rfloor\) from the sealed registers, not a puzzle. Nothing in the protocol retargets \(q\) or a hash threshold as more meters appear. Block time is a clock constant. A block is valid when its hash chain links and its signatures verify, not when a hash is below a moving target.
 
-The block byte cap \(B\) is a protocol constant. It does not grow with height, with meter count, or with supply. An ML-DSA-65 signature is 3309 bytes [NIST FIPS 204]. With a few hundred bytes of payload, one issuance occupies on the order of 3.6 kB. A cap of \(B = 2^{20}\) bytes therefore holds on the order of
-
-\[
-\left\lfloor \frac{2^{20}}{3600} \right\rfloor \approx 291
-\]
-
-issuances. Excess intervals wait for the next block. The cap stays \(B\). Waiting is the cost of a fixed cap. Raising \(B\) is a different edition, not an automatic retarget.
+The block byte cap \(B\) is a protocol constant. It does not grow with height, with meter count, or with supply. An ML-DSA-44 signature is 2420 bytes [NIST FIPS 204]. With a few hundred bytes of payload, one issuance occupies on the order of 2.7 kB. A cap of \(B = 2^{20}\) bytes therefore holds on the order of 400 issuances. Excess intervals wait for the next block. The cap stays \(B\).
 
 ## Unlimited supply
 
