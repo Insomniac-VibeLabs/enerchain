@@ -1,26 +1,23 @@
 # Energy verification
 
-Edition: doc-0.2 (2026-10-08).
+Edition: doc-0.3 (2026-10-08).
 
 ## Plain language
 
-Enerchain only works if the network can tell a real delivery from a story. The meter has to be identifiable, the reading has to be signed, and the same energy must not be counted twice. A signature proves who signed. It does not, by itself, prove where the electrons came from.
+The meter is a locked mint. It measures the electricity, signs what it measured, and only then can coins exist. The coin count comes from the physics of the interval, not from a request.
 
-## Objective
+## Quantities
 
-Define the minimum evidence for a Proof of Generation claim, and name the frauds that evidence does not yet stop.
+Every generation interval carries:
 
-## What a claim must carry
-
-Every accepted generation event needs:
-
-- Meter identity, bound to a certified key.
-- Interval start and end in UTC, with a stated clock-error bound.
-- Voltage, current, and power factor, or the raw samples from which they were derived.
-- Duration and integrated active energy in kilowatt-hours.
-- Delivery boundary: injection point, load point, or another boundary the specification defines.
-- A digital signature over the canonical record.
-- A nullifier so this interval cannot be submitted again.
+- meter identity
+- start and end in UTC
+- voltage
+- current
+- power factor
+- duration
+- integrated kilowatt-hours
+- the device signature
 
 Illustrative record, not a wire format:
 
@@ -33,46 +30,26 @@ Illustrative record, not a wire format:
   "current_a": 40,
   "power_factor": 0.98,
   "active_energy_kwh": 9.4,
-  "boundary": "injection",
-  "signature": "<detached signature>"
+  "coins": 9.4,
+  "signature": "<device signature>"
 }
 ```
 
-Internal check: `voltage * current * power_factor * hours / 1000` should land near `active_energy_kwh`, inside the meter’s accuracy class and sampling error. For this example, `240 * 40 * 0.98 * 1 / 1000 = 9.408`, which matches 9.4 kWh at the reported precision. A mismatch is a reason to reject. A match is not proof of a generator.
+Check: \(240 \times 40 \times 0.98 \times 1 / 1000 = 9.408\), which matches 9.4 kWh at the reported precision. The coin field has to match the schedule for that integral. Accuracy classes for this integral are standardized [IEC 62053-22:2020].
 
-## Hardware assumptions
+## Hardware
 
-A research-grade Enerchain meter would need a secure element holding a unique key, tamper detection, and firmware that the certification policy recognizes. Accuracy of active-energy measurement is a solved standards problem at the class level [IEC 62053-22:2020]. Tamper resistance is not. Field studies of advanced metering infrastructure show usage data can be altered at the sensor, at rest in the device, and in transit [McLaughlin, Podkuiko, and McDaniel 2010]. Generation fraud is that literature with the sign flipped: inflate delivered energy instead of hiding consumed energy.
+The meter contains a secure element, a unique identity, a private key that does not leave the element, tamper detection, and firmware that applies the schedule. The element signs. Validators on the public ledger check the signature and that this interval has not been minted. Transfer of the resulting coins uses a separate account key, also on the public ledger, so a spend is non-repudiable.
 
-## Verification steps
+## Steps
 
-1. Meter integrates energy at the stated boundary.
-2. Meter signs the record with its device key.
-3. The record is submitted to validators.
-4. Validators check signature, certification, time window, and nullifier.
-5. A delivery rule, not yet specified, accepts or rejects the physical claim.
-6. Only then may issuance run.
+1. The meter integrates voltage and current over the interval.
+2. The secure element applies the coin schedule and signs.
+3. The record is submitted.
+4. Validators accept the signature and the fresh interval.
+5. Coins are issued.
+6. The holder transfers them with an account signature.
 
-Step 5 is the open problem. Step 4 can be decentralized. Step 5 cannot be decentralized by wishing.
+## Schedule
 
-## Frauds the design must resist
-
-- Fabricated generation, including a source feeding the meter with no net delivery.
-- Cloned hardware and extracted keys.
-- Double counting across Enerchain and a certificate registry [Gillenwater 2008].
-- Replay of an old signed interval.
-- Circular schemes: charge a battery from the grid, discharge it through the meter, mint on both legs.
-- Storage reported as generation.
-
-## Open research question
-
-How can Enerchain verify production while minimizing reliance on a single utility oracle?
-
-Candidate directions, none selected:
-
-- Cross-check against an independent sensor at the same boundary.
-- Statistical tests on electrical signatures of the claimed source.
-- Commitment of encrypted interval data, with later audit by a rotating set of observers.
-- Economic bonding of the meter operator, slashed on demonstrated fraud.
-
-Any direction that quietly appoints one company as the permanent oracle fails the governance rule in [governance.md](governance.md). Any direction that ignores the utility’s physical switch fails the grid. Both constraints stand.
+doc-0.3 uses a one-to-one baseline: one coin per accepted kilowatt-hour. A later edition can change the schedule. It cannot change the rule that the element will not sign above the schedule.
