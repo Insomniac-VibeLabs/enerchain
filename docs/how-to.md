@@ -1,6 +1,6 @@
 # How to read and change Enerchain documents
 
-Edition: doc-0.4 (2026-10-08). This is a documentation edition, not a software release.
+Edition: doc-0.5 (2026-10-08). This is a documentation edition, not a software release.
 
 ## What this repository is
 
@@ -13,11 +13,12 @@ Enerchain is the working notes for an electricity-denominated public currency. I
 3. [Whitepaper](../WHITEPAPER.md) — Proof of Generation, the hardware lock, and transfer.
 4. [Energy verification](energy-verification.md) — voltages, current, time, and the coins that follow.
 5. [Hardware binding](hardware-binding.md) — the sealed integral that signs the token.
-6. [Economics](economics.md) — individuals feeding grids, and regional price.
-7. [Interplanetary economics](interplanetary-economics.md) — the token as proof of local generation, not an export of energy.
-8. [Governance](governance.md) — who may change the rules.
-9. [Roadmap](../ROADMAP.md) — research phases. Phase 1 is current.
-10. [References](references.md) — sources used in doc-0.4.
+6. [Ledger nonrepudiation](ledger-nonrepudiation.md) — posting that signature on a public, quantum-resistant ledger.
+7. [Economics](economics.md) — individuals feeding grids, and regional price.
+8. [Interplanetary economics](interplanetary-economics.md) — the token as proof of local generation, not an export of energy.
+9. [Governance](governance.md) — who may change the rules.
+10. [Roadmap](../ROADMAP.md) — research phases. Phase 1 is current.
+11. [References](references.md) — sources used in doc-0.5.
 
 ## How a concept change is made
 

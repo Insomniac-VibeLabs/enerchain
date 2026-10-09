@@ -52,7 +52,17 @@ WELMEC. *Guide 7.2: Software Guide* (Measuring Instruments Directive 2014/32/EU)
 
 Rincón, A. E. R., Melo Jr., W. S., Farias, C. M., & Carmo, L. F. R. C. (2021). Securing smart meters through physical properties of their components. *IEEE Transactions on Instrumentation and Measurement*, 70, 3000511. https://doi.org/10.1109/TIM.2020.3041098
 
-The integral, the token schedule, and the sealed core are specified in [hardware-binding.md](hardware-binding.md).
+The integral, the token schedule, and the sealed core are specified in [hardware-binding.md](hardware-binding.md). Public posting and the signature scheme are specified in [ledger-nonrepudiation.md](ledger-nonrepudiation.md).
+
+## Post-quantum signatures
+
+Shor, P. W. (1997). Polynomial-time algorithms for prime factorization and discrete logarithms on a quantum computer. *SIAM Journal on Computing*, 26(5), 1484–1509. https://doi.org/10.1137/S0097539795293172
+
+Grover, L. K. (1996). A fast quantum mechanical algorithm for database search. In *Proceedings of the 28th Annual ACM Symposium on Theory of Computing*, 212–219. https://doi.org/10.1145/237814.237866
+
+NIST. (2024). *FIPS 204: Module-Lattice-Based Digital Signature Standard*. https://doi.org/10.6028/NIST.FIPS.204
+
+NIST. (2024). *FIPS 205: Stateless Hash-Based Digital Signature Standard*. https://doi.org/10.6028/NIST.FIPS.205
 
 ## Interplanetary links and local energy
 

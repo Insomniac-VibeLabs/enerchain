@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Edition: doc-0.4 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
+Edition: doc-0.5 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -45,6 +45,7 @@ Start with [docs/how-to.md](docs/how-to.md). The claim itself is in [docs/hypoth
 | [Whitepaper](WHITEPAPER.md) | How issuance and transfer work? |
 | [Energy verification](docs/energy-verification.md) | How is the hardware lock specified? |
 | [Hardware binding](docs/hardware-binding.md) | How does the sealed integral sign the token? |
+| [Ledger nonrepudiation](docs/ledger-nonrepudiation.md) | How does that signature become a public, quantum-resistant record? |
 | [Economics](docs/economics.md) | Who generates, and how do regions trade? |
 | [Interplanetary economics](docs/interplanetary-economics.md) | What does a planetary region prove? |
 | [Governance](docs/governance.md) | Who may change the rules? |
