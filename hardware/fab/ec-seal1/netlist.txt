@@ -1,0 +1,322 @@
+# EC-SEAL1 netlist doc-1.1.
+# Finished copper is the pours and the traces in the Gerber.
+# Every other connection is this list, fanned out by the board house.
+# GND is Neutral. H3 and the logic ground are the same net.
+
+NET BLEED
+  R1.2
+  R2.1
+
+NET CAL_LOCKED
+  U3.CAL_LOCKED
+  J5.5
+
+NET CF
+  Q1.D
+  R15.2
+  U3.CF_IN
+
+NET CF_G
+  R14.2
+  C13.1
+  Q1.G
+
+NET CROW_G
+  R22.2
+  C14.1
+  Q4.G
+
+NET DROP
+  C1.1
+  R2.2
+  R3.1
+
+NET EN
+  U2.EN
+  R12.2
+
+NET GND
+  H3.1
+  RV1.2
+  D1.K
+  Z1.A
+  C2.-
+  U1.GND
+  C3.2
+  C4.2
+  R8.2
+  C5.2
+  TVS1.2
+  TV1.1
+  U2.VIN1
+  U2.GND_REF
+  U2.GNDA
+  U2.GND_REG
+  U2.GNDD
+  U2.SYN
+  U2.EP
+  C7.2
+  C8.2
+  C9.2
+  C10.2
+  C11.2
+  C12.2
+  C13.2
+  Q1.S
+  R19.2
+  Q2.E
+  C14.2
+  Q4.S
+  U3.VSS
+  U3.VSS2
+  U3.32
+  U3.31
+  U3.30
+  U3.29
+  U3.28
+  U3.27
+  U3.26
+  U3.25
+  U3.EP
+  Y2.GND
+  U4.GND
+  U4.GND9
+  U4.GND16
+  U4.GND23
+  U4.GND32
+  U4.EP
+  C15.2
+  J4.2
+  J4.3
+  J5.6
+  SW1.2
+
+NET IIN
+  R11.2
+  C6.2
+  U2.IIN1
+
+NET IIN_F
+  RS.SG
+  R11.1
+
+NET IIP
+  R10.2
+  C6.1
+  U2.IIP1
+
+NET IIP_F
+  RS.SI
+  R10.1
+
+NET LED1
+  U2.LED1
+  R13.1
+  R14.1
+
+NET L_FUSED
+  F1.2
+  RV1.1
+  C1.2
+  R1.1
+
+NET L_GEN
+  H2.1
+  RS.FG
+
+NET L_GRID
+  H1.1
+  RS.IG
+  F1.1
+  R4.1
+
+NET MESH
+  R16.2
+  R17.1
+  PT1.E
+  R18.1
+
+NET MESH_SW
+  R17.2
+  SW1.1
+
+NET MINT
+  U3.MINT
+  J5.8
+
+NET PROV_CS
+  U3.PROV_CS
+  J5.1
+
+NET PROV_MISO
+  U3.PROV_MISO
+  J5.4
+
+NET PROV_MOSI
+  U3.PROV_MOSI
+  J5.3
+
+NET PROV_SCK
+  U3.PROV_SCK
+  J5.2
+
+NET Q2B
+  R18.2
+  R19.1
+  Q2.B
+  R21.2
+
+NET Q2C
+  Q2.C
+  R20.1
+
+NET Q3B
+  R20.2
+  Q3.B
+
+NET QS_CS_N
+  U3.QS_CS_N
+  U4.SPI_CS
+
+NET QS_MISO
+  U3.QS_MISO
+  U4.SPI_MISO
+
+NET QS_MOSI
+  U3.QS_MOSI
+  U4.SPI_MOSI
+
+NET QS_RST
+  U3.QS_RST_N
+  U4.RST
+  R25.2
+
+NET QS_SCK
+  U3.QS_SCK
+  U4.SPI_CLK
+
+NET QS_VDD
+  Q4.D
+  R23.2
+  U4.VCC
+  U4.VCC2
+  U4.VCC14
+  U4.VCC22
+  C15.1
+  R25.1
+
+NET RADIO_TX
+  R26.2
+  J4.4
+
+NET RECT_AC
+  R3.2
+  D1.A
+  D2.A
+
+NET RST_N
+  U3.RST_N
+  R24.2
+
+NET STP_CS
+  U2.SCS
+  U3.STP_CS
+
+NET STP_MISO
+  U2.MISO
+  U3.STP_MISO
+
+NET STP_MOSI
+  U2.MOSI
+  U3.STP_MOSI
+
+NET STP_SCK
+  U2.SCL
+  U3.STP_SCK
+
+NET UART_TX
+  U3.UART_TX
+  R26.1
+
+NET VD1
+  R4.2
+  R5.1
+
+NET VD2
+  R5.2
+  R6.1
+
+NET VD3
+  R6.2
+  R7.1
+
+NET VDD
+  U1.OUT
+  U1.TAB
+  C3.1
+  U2.VCC
+  C12.1
+  R12.1
+  R13.2
+  R15.1
+  R16.1
+  PT1.C
+  Q3.E
+  R23.1
+  U3.VDD
+  U3.VDD2
+  Y2.EN
+  R24.1
+  J4.1
+  J5.7
+
+NET VDDA
+  U2.VDDA
+  C10.1
+
+NET VDDD
+  U2.VDDD
+  C11.1
+
+NET VIP
+  R9.2
+  TVS1.1
+  U2.VIP1
+
+NET VIP_S
+  R7.2
+  R8.1
+  C5.1
+  R9.1
+
+NET VRECT
+  D2.K
+  Z1.K
+  C2.+
+  U1.IN
+  C4.1
+
+NET VREF
+  U2.VREF1
+  C9.1
+
+NET XI
+  U3.XI
+  Y2.OUT
+
+NET XTAL1
+  U2.XTAL1
+  Y1.1
+  C7.1
+
+NET XTAL2
+  U2.XTAL2
+  Y1.2
+  C8.1
+
+NET ZEROIZE
+  Q3.C
+  R21.1
+  R22.1
+  U3.ZEROIZE
+  U4.GPIO3

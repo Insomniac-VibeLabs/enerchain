@@ -6,13 +6,13 @@ Edition: doc-1.1 (2026-10-09).
 
 Hardware. Not a software wallet, and not a from-scratch ML-DSA ASIC.
 
-A program on the inverter, the radio, or a server can report any integral it wants. The whitepaper's claim is that the signed total is the total the sealed terminals measured. That claim is false if software is allowed to choose `n`. It is also weaker, not stronger, if the signature comes from a new die whose lattice core, random source, and key injection have never been reviewed. A partial Keccak gate and an NTT butterfly that uses the Verilog `%` operator are not a mask set, and they are not side-channel resistant.
+A program on the inverter, the radio, or a server can report any integral it wants. The whitepaper’s claim is that the signed total is the total the sealed terminals measured. That claim is false if software is allowed to choose `n`. It is also weaker, not stronger, if the signature comes from a new die whose lattice core, random source, and key injection have never been reviewed. A partial Keccak gate and an NTT butterfly that uses the Verilog `%` operator are not a mask set, and they are not side-channel resistant.
 
 The manufacturable lock is three pieces, and none of them is left for the factory to invent:
 
 1. **EC-SEAL1 board.** Shunt, divider, supply, tamper latch, and meter ASIC, with every resistor, capacitor, diode, and transistor called out. Two boards are required for an issuance: one on the generator side of the terminals, one on the grid side. The ledger mints only when both signatures agree within the class tag.
 2. **EC-MINT1 die.** A small standard-cell chip. It counts watt-hour pulses, and it is the only SPI master the signer will ever see. The radio is not on that bus. The foundry synthesizes the Verilog in this repository on its own standard-cell library. It does not choose the schedule, the packet, or the pinout.
-3. **QS7001 signer.** A catalog secure element that already runs ML-DSA in hardware, keeps the private key inside, and has a public QFN-32 pinout. The OTP image is the signing oracle in [firmware/qs7001/sign_oracle.c](firmware/qs7001/sign_oracle.c). It has two commands: sign this 32-byte record, or erase the key. The image hash is published next to the meter's public key, so a substituted image does not verify.
+3. **QS7001 signer.** A catalog secure element that already runs ML-DSA in hardware, keeps the private key inside, and has a public QFN-32 pinout. The OTP image is the signing oracle in [firmware/qs7001/sign_oracle.c](firmware/qs7001/sign_oracle.c). It has two commands: sign this 32-byte record, or erase the key. The image hash is published next to the meter’s public key, so a substituted image does not verify.
 
 Non-repudiation is the ML-DSA-44 signature over the record EC-MINT1 built from its own counters. A later party checks the signature, the certified key, and that cumulative watt-hours extend the previous accepted record. The signer cannot deny the signature. The radio cannot produce one. Opening the cover fires a discrete transistor latch, which orders a key erase and then crowbars the signer rail.
 

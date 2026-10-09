@@ -1,18 +1,21 @@
 # EC-MINT1 chip handoff
 
-Edition: doc-1.0 (2026-10-08). This is the package an ASIC design house accepts before physical design. It is not GDSII. A foundry will not mask it until place-and-route on that foundry’s process design kit.
+Edition: doc-1.1 (2026-10-09). This is the package an ASIC design house accepts before physical design. It is not GDSII. A foundry will not mask it until place-and-route on that foundry's process design kit.
 
 ## Function
 
-EC-MINT1 counts watt-hour pulses, mints one token per 1000 pulses, and signs the record with an on-die ML-DSA-44 datapath. The private key is written once through the provision port and has no runtime read. ZEROIZE clears the key register.
+EC-MINT1 counts watt-hour pulses and is the only SPI master the signer ever sees. One token is 1000 pulses. The private key is not in this die. It is in a QS7001, which already runs ML-DSA-44. ZEROIZE tells that part to erase the key and then holds the signer in reset.
+
+The doc-1.0 files `rtl/keccak_round.v` and `rtl/ntt_butterfly.v` are sketches from doc-0.8. They are not in this netlist. The butterfly uses a Verilog modulo operator. Do not synthesize them.
 
 ## What to send a chip house
 
-- [spec.md](spec.md) — pins, rails, clock, packet.
-- [rtl/](rtl/) — synthesizable Verilog.
-- [constraints/ec_mint1.sdc](constraints/ec_mint1.sdc) — 16.384 MHz period.
-The butterfly uses a modulo operator so the arithmetic is obvious. Replace it with the Barrett reduction from sheet 11 before synthesis. TX is held idle in this drop; the mint pulse and the key lock are the blocks under test. FIPS 204 known-answer vectors are required before a netlist freeze.
+- [PINOUT.md](PINOUT.md) and [PACKAGE.md](PACKAGE.md) — QFN-32, 5 mm, 0.50 mm, pin 1 at the top of the left side.
+- [spec.md](spec.md) — rails, clock, packet.
+- [rtl/ec_mint1.v](rtl/ec_mint1.v), [rtl/ec_mint1_schedule.v](rtl/ec_mint1_schedule.v), [rtl/spi_byte.v](rtl/spi_byte.v) — the netlist.
+- [constraints/ec_mint1.sdc](constraints/ec_mint1.sdc) — 16.000 MHz.
+- [tb/tb_schedule.v](tb/tb_schedule.v) and [../../tools/check_schedule.py](../../tools/check_schedule.py) — the schedule. The Python spec passes. The SPI and UART paths were not simulated in the sandbox that wrote them; there is no Verilog simulator here. Run the schedule testbench before place-and-route, and run a gate simulation of one sign and one wipe before tapeout.
 
 ## What not to send a foundry yet
 
-No LEF, no Liberty, no GDSII. Those come back from the design house after synthesis and layout on the PDK they hold under contract.
+No LEF, no Liberty, no GDSII. Those come back from the design house after synthesis and layout on the PDK they hold under contract. Do not add a CPU, a Pierce oscillator, or a second SPI master.

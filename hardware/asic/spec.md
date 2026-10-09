@@ -1,36 +1,35 @@
 # EC-MINT1 specification
 
-Edition: doc-1.0.
+Edition: doc-1.1. The pin table is [PINOUT.md](PINOUT.md). This file is the electrical contract around that table. The doc-1.0 text that put an ML-DSA key in a 256-bit register is withdrawn. An ML-DSA-44 private key is 2560 bytes and it stays in the QS7001.
 
 ## Rails
 
-- VDD_IO 3.3 V, meter LDO.
-- VDD_CORE 1.2 V, on-die regulator from VDD_IO.
-- VSS common.
-- Decouple 100 nF on each rail at the package.
+- VDD_IO 3.3 V, from the meter LDO. Two pins, 1 and 23.
+- VDD_CORE 1.2 V, on-die regulator from VDD_IO. The board does not supply it.
+- VSS on pins 2, 24, 25–32, and the exposed pad.
 
 ## Clock
 
-16.384 MHz on XI/XO, or a CMOS clock on XI with XO open. Reset is asynchronous, active low, synchronized inside.
+16.000 MHz CMOS on XI. There is no XO pin and no Pierce cell. Reset is asynchronous, active low, synchronized inside. UART is 8N1 at 139 clocks per bit, about 115108 baud.
 
-## Pins
+## Packet
 
-| Pin | Dir | Function |
-| --- | --- | --- |
-| VDD_IO, VDD_CORE, VSS | power | rails |
-| XI, XO | in/out | 16.384 MHz |
-| RST_N | in | async reset, active low |
-| CF_IN | in | watt-hour pulse, 3.3 V |
-| ZEROIZE | in | active high, clears key |
-| TX | out | signed record, 115200 8N1 |
-| PROV_CS, PROV_SCK, PROV_MOSI | in | one-time key load |
-| PROV_MISO | out | status only, never the key |
-| MINT | out | one-cycle token pulse |
+The signer sees a command byte `A1`, then 32 bytes, then a CRC-8 (poly `0x07`, init `0`) over those 32 bytes, then 2420 clocks of signature. The 32 bytes are:
 
-## Packet on TX
+| Field | Bytes |
+| --- | --- |
+| meter id | 4 |
+| t0 | 4, zero. Anti-replay is W |
+| t1 | 4, zero |
+| w | 4, the value 1000 |
+| n | 2 |
+| W | 4, cumulative watt-hours |
+| r | 2, residual pulses |
+| class | 1, `0x22` |
+| pad | 7, zero |
 
-id[31:0], t0[31:0], t1[31:0], w[31:0], n[15:0], W[31:0], r[15:0], class[7:0], then sig bytes. n is 1 when 1000 watt-hour pulses have accumulated.
+The UART then sends those 32 bytes and the 2420 signature bytes. Wipe is command `5C 5C`, then QS_RST_N stays low and the counter stops.
 
 ## Power
 
-Sign is the peak. Budget the core so average draw of this die stays inside the meter’s 2 W cap with the radio asleep. Target core average under 20 mW.
+Sign is the peak, and it is the QS7001's peak, not a lattice core on this die. Budget this die so the meter stays inside the 2 W cap in [docs/meter-burden.md](../../docs/meter-burden.md) with the radio asleep. Target for this die is under 20 mW average.

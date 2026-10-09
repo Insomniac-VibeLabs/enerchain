@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Edition: doc-1.0 (2026-10-08). Documentation edition, not a software release. See [CHANGELOG.md](CHANGELOG.md).
+Edition: doc-1.1 (2026-10-09). See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -32,7 +32,7 @@ A home array delivers 10 kWh in one hour. The meter records voltage, current, po
 
 ## Status
 
-Concept and research. Phase 1 in [ROADMAP.md](ROADMAP.md). No implementation is in this repository yet.
+The manufacturable design is doc-1.1, in [SOLUTION.md](SOLUTION.md). It is hardware: a sealed meter board, a small schedule chip, and a catalog ML-DSA secure element. Software does not choose the token count. There is still no GDSII, and the QFN fanout is a netlist the board house executes, not a finished short-free escape. Nothing in this repository has been built or taped out.
 
 ## Documents
 
@@ -43,15 +43,17 @@ Start with [docs/how-to.md](docs/how-to.md). The claim itself is in [docs/hypoth
 | [Hypothesis](docs/hypothesis.md) | What is being proposed? |
 | [Problem statement](docs/problem-statement.md) | Why an electricity currency? |
 | [Whitepaper](WHITEPAPER.md) | How issuance and transfer work? |
+| [Solution](SOLUTION.md) | Why hardware, and what was wrong in doc-0.9? |
 | [Energy verification](docs/energy-verification.md) | How is the hardware lock specified? |
 | [Hardware binding](docs/hardware-binding.md) | How does the sealed integral sign the token? |
 | [Ledger nonrepudiation](docs/ledger-nonrepudiation.md) | How does that signature become a public, quantum-resistant record? |
 | [Meter burden](docs/meter-burden.md) | How little electricity may the mint path use? |
-| [Schematic](docs/schematics/mint-path.svg) | Hardware-only mint path. |
-| [Circuit sheets](docs/schematics/README.md) | IEC-symbol circuits for each block. |
-| [Sign datapath](docs/schematics/crypto-datapath.md) | Hardwired cryptography and ledger update. |
-| [Fab pack](hardware/fab/FAB-NOTES.md) | BOM and netlist. Not Gerber, not a tapeout. |
-| [EC-MINT1](hardware/asic/README.md) | Chip handoff for an ASIC house. Not GDSII. |
+| [Schematic](docs/schematics/mint-path.svg) | Earlier hardware-only mint path. |
+| [Circuit sheets](docs/schematics/README.md) | IEC-symbol circuits. Not the fab artwork. |
+| [Sign datapath](docs/schematics/crypto-datapath.md) | Doc-0.8 cryptography sketch. Not the tapeout. |
+| [EC-SEAL1](hardware/fab/ec-seal1/MANUFACTURER.md) | Board order. Parts, pours, netlist. |
+| [Fab notes](hardware/fab/FAB-NOTES.md) | Do not build the doc-0.9 BOM. |
+| [EC-MINT1](hardware/asic/README.md) | Chip handoff. Not GDSII. |
 | [Economics](docs/economics.md) | Who generates, and how do regions trade? |
 | [Interplanetary economics](docs/interplanetary-economics.md) | What does a planetary region prove? |
 | [Governance](docs/governance.md) | Who may change the rules? |
