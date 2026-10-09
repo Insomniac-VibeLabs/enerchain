@@ -1,93 +1,36 @@
-# Enerchain
+## Energy Measurement vs Energy Value
 
-## A Distributed Energy Currency Based on Proof of Generation
+Enerchain distinguishes between physical energy generation and economic value.
 
----
+The protocol measures energy using universally verifiable physical properties such as:
 
-## Abstract
+- Voltage
+- Current
+- Time
+- Delivered Energy
 
-Enerchain is a proposed blockchain protocol that creates digital currency through verifiable electrical energy generation.
+These measurements remain consistent regardless of geographic location.
 
-Unlike Proof of Work systems that reward energy consumption, Enerchain rewards energy production.
+However, Enerchain does not assume all generated energy possesses equal economic value.
 
-The objective is to align monetary issuance with the creation of one of civilization's most essential resources.
+A kilowatt-hour generated within an energy-rich region may be less economically valuable than a kilowatt-hour generated within an energy-constrained region.
 
----
+Examples include:
 
-## The Problem
-
-Current economic systems derive value from:
-
-- Government issuance
-- Commodity reserves
-- Financial institutions
-- Computational work
-
-None directly tie currency creation to energy generation.
-
-As technological civilization expands, energy increasingly becomes the foundation of computation, manufacturing, transportation, and artificial intelligence.
-
----
-
-## The Solution
-
-Enerchain introduces Proof of Generation (PoG).
-
-Proof of Generation rewards measurable electrical energy delivered to trusted infrastructure.
-
-Instead of mining through computational work, participants "mine" by generating energy.
-
----
-
-## Core Concept
-
-Energy Generation
-
-↓
-
-Cryptographic Verification
-
-↓
-
-Distributed Consensus
-
-↓
-
-Token Issuance
-
-↓
-
-Transferable Economic Value
-
----
-
-## Proposed Issuance Formula
-
-Token Issuance
-
-=
-
-Verified Energy
-
-× Trust Coefficient
-
-× Delivery Multiplier
-
-× Protocol Policy
-
----
-
-## Long-Term Vision
-
-Enerchain investigates whether energy can serve as a foundational reserve asset for future civilizations.
-
-Potential future applications include:
-
-- Smart city infrastructure
-- Distributed microgrids
-- Planetary power networks
+- Mature industrial economies
+- Developing regions with limited infrastructure
+- Isolated communities
 - Lunar settlements
 - Martian colonies
-- Interplanetary trade systems
 
-Because electrical energy is governed by consistent physical laws, it may provide a universal accounting framework independent of political systems.
+Enerchain therefore separates:
+
+Physical Generation
+    Universal
+
+Economic Valuation
+    Regional
+
+Proof of Generation validates the existence of generated energy.
+
+Markets determine the relative value of that energy.
