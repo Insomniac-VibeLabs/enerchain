@@ -36,7 +36,7 @@ The manufacturable design is doc-1.1, in [SOLUTION.md](SOLUTION.md). It is hardw
 
 ## Documents
 
-Start with [docs/how-to.md](docs/how-to.md). The claim itself is in [docs/hypothesis.md](docs/hypothesis.md). Sources are in [docs/references.md](docs/references.md).
+Start with [docs/how-to.md](docs/how-to.md). It is the reading order and the build. The claim itself is in [docs/hypothesis.md](docs/hypothesis.md). Sources are in [docs/references.md](docs/references.md).
 
 | Document | Question it answers |
 | --- | --- |

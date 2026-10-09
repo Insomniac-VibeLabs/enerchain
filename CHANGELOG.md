@@ -14,6 +14,6 @@ Enerchain has no software release. Documentation editions use the `doc-` prefix 
 | doc-0.8 | 2026-10-08 | Opened the sign datapath and the ledger update to registers, Keccak gates, and an NTT butterfly. |
 | doc-0.9 | 2026-10-08 | Added a PCB order pack: BOM, netlist, fab notes. No Gerber and no GDSII. |
 | doc-1.0 | 2026-10-08 | Added the EC-MINT1 ASIC handoff: spec, RTL, constraints. Not a tapeout. |
-| doc-1.1 | 2026-10-09 | Chose hardware over a software wallet and over an on-die ML-DSA core. EC-SEAL1 board order, EC-MINT1 schedule die, QS7001 signing oracle. Corrected the doc-0.9 MOV, LDO, and divider. |
+| doc-1.1 | 2026-10-09 | Chose hardware over a software wallet and over an on-die ML-DSA core. EC-SEAL1 board order, EC-MINT1 schedule die, QS7001 signing oracle. Corrected the doc-0.9 MOV, LDO, and divider. The how-to is the reading order and the build. |
 
 Software release tags, when they exist, must not be used as documentation edition numbers. Cite a document as `path@doc-1.1` until a later edition supersedes it.

@@ -1,32 +1,145 @@
-# How to read and change Enerchain documents
+# How to read, set up, and build
 
-Edition: doc-1.0 (2026-10-08). This is a documentation edition, not a software release.
+Edition: doc-1.1 (2026-10-09). This is not a software release. Nothing in the tree has been stuffed or taped out.
 
 ## What this repository is
 
-Enerchain is the working notes for an electricity-denominated public currency. Issuance is hardware-locked to measured generation delivered to a grid. Transfer uses a public ledger with non-repudiation.
+Enerchain is an electricity currency. Coins are created when a sealed meter measures energy delivered to a grid and signs that total. The count is not chosen by a program on the inverter, the radio, or a server.
+
+The buildable form is three pieces, decided in [SOLUTION.md](../SOLUTION.md):
+
+1. **EC-SEAL1**, the meter board. Order two. One sits on the generator side of the terminals, one on the grid side. The ledger mints only when both signatures agree.
+2. **EC-MINT1**, a small standard-cell die. It counts watt-hour pulses and is the only SPI master the signer will ever see. One token is 1000 pulses, which is 1 kWh at the meter’s 1000 impulses/kWh setting.
+3. **QS7001**, a catalog secure element. ML-DSA-44 runs inside it. The private key is not in EC-MINT1 and not in any file in this repository.
+
+Do not build from [hardware/fab/BOM.csv](../hardware/fab/BOM.csv). That is the doc-0.9 list. The MOV, the regulator, and the divider in it are the wrong parts. The buy list that ships is [hardware/fab/ec-seal1/BOM.csv](../hardware/fab/ec-seal1/BOM.csv).
 
 ## Reading order
 
-1. [Hypothesis](hypothesis.md) — the claim, in ordinary language and then in technical language.
-2. [Problem statement](problem-statement.md) — why an electricity unit, and why now.
-3. [Whitepaper](../WHITEPAPER.md) — Proof of Generation, the hardware lock, and transfer.
-4. [Energy verification](energy-verification.md) — voltages, current, time, and the coins that follow.
-5. [Hardware binding](hardware-binding.md) — the sealed integral that signs the token.
-6. [Ledger nonrepudiation](ledger-nonrepudiation.md) — posting that signature on a public, quantum-resistant ledger.
-7. [Meter burden](meter-burden.md) — why minting and posting stay inside a present-day meter’s draw.
-8. [Schematic](schematics/README.md) — block sketch, then one IEC-symbol sheet per block.
-9. [Economics](economics.md) — individuals feeding grids, and regional price.
-10. [Interplanetary economics](interplanetary-economics.md) — the token as proof of local generation, not an export of energy.
-11. [Governance](governance.md) — who may change the rules.
-12. [Roadmap](../ROADMAP.md) — research phases. Phase 1 is current.
-13. [References](references.md) — sources used in doc-1.0.
-14. [Fab pack](../hardware/fab/FAB-NOTES.md) — what a board house can be sent, and what a foundry cannot.
-15. [EC-MINT1](../hardware/asic/README.md) — chip handoff. Synthesizable RTL, not a mask set.
+Read these before you change a net or a register. The schematic SVGs are design drawings. They are not the fabrication artwork, and several of them still show the parts doc-1.1 rejected.
+
+1. [Hypothesis](hypothesis.md) — the claim.
+2. [Problem statement](problem-statement.md) — why an electricity unit.
+3. [Whitepaper](../WHITEPAPER.md) — Proof of Generation, the lock, and transfer.
+4. [Solution](../SOLUTION.md) — why this is hardware, and the doc-0.9 corrections.
+5. [Energy verification](energy-verification.md) — voltage, current, time, and the coins that follow.
+6. [Hardware binding](hardware-binding.md) — the sealed integral that signs the token.
+7. [Ledger nonrepudiation](ledger-nonrepudiation.md) — that signature on a public ledger. Anti-replay is the cumulative watt-hour total, not a clock.
+8. [Meter burden](meter-burden.md) — the mint path stays inside a present-day meter’s draw.
+9. [EC-SEAL1 manufacturer file](../hardware/fab/ec-seal1/MANUFACTURER.md) — what the board house is given, and what it must not invent.
+10. [Circuits](../hardware/fab/ec-seal1/CIRCUITS.md) — the discrete parts, including the tamper transistors.
+11. [EC-MINT1](../hardware/asic/README.md) — chip handoff. Verilog and a package drawing, not GDSII.
+12. [Economics](economics.md) and [interplanetary economics](interplanetary-economics.md) — who generates, and what a region proves.
+13. [Governance](governance.md) — who may change the rules.
+14. [Roadmap](../ROADMAP.md) — phase 1 is specified. Phase 3 is the first board. It has not been built.
+15. [References](references.md).
+
+`hardware/asic/rtl/keccak_round.v` and `ntt_butterfly.v` are the doc-0.8 sketches. They are not instantiated. Do not synthesize them.
+
+## Set up
+
+You need Git, Python 3, and Pillow. Pillow draws the placement file when the plots are regenerated. The schedule check does not need it.
+
+```sh
+git clone https://github.com/sbusch305/enerchain.git
+cd enerchain
+python3 -c "import PIL"
+```
+
+If that import fails, install Pillow in a virtualenv (`pip install pillow`) and use that interpreter for the plot step. Do not vendor it into this tree.
+
+Confirm the coin rule before you touch a board file:
+
+```sh
+python3 tools/check_schedule.py
+```
+
+The passing line is:
+
+```text
+PASS schedule: 1000 Wh -> 1 token, residual chain holds across splits
+```
+
+That is the same rule as `hardware/asic/rtl/ec_mint1_schedule.v`. One thousand watt-hour pulses mint one token and leave the residual at 0. Four hundred pulses followed by six hundred mint one token, not two. The script does not sign anything and does not prove the SPI engine.
+
+## Regenerate the board plots
+
+The Gerbers, drill, centroid, BOM, and netlist under `hardware/fab/ec-seal1/` are generated by one script. If you move a part, change `tools/gen_board.py` and run it again. Do not patch a Gerber by hand.
+
+```sh
+python3 tools/gen_board.py
+```
+
+A good run ends with `bodies clear`, a clearance list whose first number on each row is at least `2.5`, and `wrote .../gerber`. It exits non-zero if two nets share copper, if two bodies overlap, or if a mains pour misses the pad it is supposed to cover. The QFN escape is not in that Gerber on purpose. A via pad does not fit between 0.50 mm lands on the grid this script uses, and a shorted plot is not a file to send.
+
+What the script writes, and what it refuses to write, is in [hardware/fab/ec-seal1/gerber/README.md](../hardware/fab/ec-seal1/gerber/README.md).
+
+## Build the board
+
+Read [MANUFACTURER.md](../hardware/fab/ec-seal1/MANUFACTURER.md) once, then send the board house that directory:
+
+- `BOM.csv` — one manufacturer part number per line. Do not substitute the shunt, the four 499 kΩ resistors, the MOV, the X2 capacitor, the LDO, the STPM32, or the QS7001.
+- `centroid.csv` — millimetres, origin at the lower left.
+- `netlist.txt` — every pin. Logic ground and Neutral are the same net, `GND`.
+- `gerber/` — outline, mask, holes, lands, the 40 A pours, the line tap into R4, the fused tap into C1, the neutral tie into via TV1, and the inner plane windows.
+- `STACKUP.md`, `CIRCUITS.md`, `TEST.md`.
+
+The house still fans out every net that is not already copper. The rules are in the manufacturer file: 4-layer 1.6 mm, no plane under the mains, 2.5 mm line-to-neutral, Kelvin traces that do not share copper with the force path, and no trace from the radio back to the signer. Inner 2 is 3.3 V. The signer rail `QS_VDD` is not that plane. It is the net after R23.
+
+Order one panel of two circuits, stuffed the same way. Mark one `GEN` and one `GRID` in the silkscreen after the pair is serialized. The meter id is burned at the provision jig, not by the stencil.
+
+The board is at mains potential. The cover is the insulation. Bench the tests in [TEST.md](../hardware/fab/ec-seal1/TEST.md) from a current-limited supply before the dropper sees the line. If the divider measures about 0.5 V rms instead of 0.120 V rms, it is the old divider. Stop.
+
+## Build the chip
+
+Send the chip house [hardware/asic/](../hardware/asic/), not a request to “add ML-DSA”:
+
+- `PINOUT.md` and `PACKAGE.md` — QFN-32, 5 mm, 0.50 mm pitch. Pin 1 is the top of the left side. Do not swap pins to make the route easier.
+- `spec.md` — rails, 16.000 MHz CMOS clock, the 32-byte record.
+- `rtl/ec_mint1.v`, `rtl/ec_mint1_schedule.v`, `rtl/spi_byte.v`.
+- `constraints/ec_mint1.sdc`.
+- `tb/tb_schedule.v`.
+
+They synthesize that Verilog on their own standard-cell library and run place-and-route on their process kit. This repository has no GDSII because that database is not public. Changing the schedule, adding a CPU, or putting the radio on the signer SPI is a different part.
+
+On a machine with Icarus Verilog, the schedule testbench is:
+
+```sh
+iverilog -g2012 -o /tmp/ec_mint1_schedule \
+  hardware/asic/rtl/ec_mint1_schedule.v \
+  hardware/asic/tb/tb_schedule.v
+vvp /tmp/ec_mint1_schedule
+```
+
+The passing line is `PASS one token per 1000 watt-hour pulses`. The SPI byte engine and the UART path were not simulated when this edition was written. Run a gate simulation of one sign and one wipe before a netlist freeze. There is no vector that reads a key, because this die does not hold one.
+
+The QS7001 is a separate part. [firmware/qs7001/sign_oracle.c](../firmware/qs7001/sign_oracle.c) is the reference image, not a host program and not something you compile with a radio SDK. Personalize the part once. Publish the image hash next to that meter’s public key. The only commands are `A1` (sign the 32-byte record, then return 2420 bytes) and `5C 5C` (erase the key). Field update is not a command.
+
+EC-MINT1 will not count until its boot ROM is locked. The image shipped in the Verilog starts `A5 5A` and then an empty frame list, which refuses to arm. The factory captures the golden STPM32 SPI transcript — 1000 impulses per kWh, current gain 16, voltage channel inside ±0.3 V, calibration words — and shifts that transcript in on the provision pogo, J5. J5 is covered by the mesh after calibration. It is not a connector a person keeps. Register addresses are not invented in this tree. Do not arm a meter on a made-up transcript.
+
+## Bring up one pair
+
+Do these in order. The pass conditions are the numbered steps in [TEST.md](../hardware/fab/ec-seal1/TEST.md).
+
+1. Dead board. Neutral is continuous to the LDO ground and to STPM32 VIN1. Line is not continuous to neutral. The shunt force path is a 100 µΩ short. The Kelvin pads are not.
+2. Tamper, unpowered then powered. Cover closed holds MESH down. Cover open, or light on the phototransistor, latches ZEROIZE high. Closing the cover again does not clear it. A power cycle clears the latch and does not restore a key that was wiped.
+3. 12 V on the rectifier rail, dropper disconnected. 3.3 V out. The signer rail follows it until the crowbar fires. STPM32’s 1.2 V pin is produced by the STPM32.
+4. Shift the ROM. `CAL_LOCKED` rises. `PROV_MISO` is only the lock flag.
+5. Divider and shunt, with the series safety resistor the test file names, before a bare 240 V connection.
+6. One thousand LED1 pulses, one UART frame, `n = 1`, cumulative watt-hours increased by 1000.
+7. The other board of the pair, same current and voltage, its own key. One board’s signature is not an issuance.
+8. Spring released under power. Within a second the signer MOSI has carried `5C 5C`, the signer rail is down, and a further pulse does not produce a frame.
+
+## What you should not expect to compile
+
+There is no node, no wallet, and no ledger daemon in this repository. Transfer and the dual-meter rule are specified. They are not a program you can `npm install`.
+
+There is no mask set. Running the Python check and regenerating the Gerbers is the setup this tree can actually execute. Building a meter is the board house, the chip house, a QS7001, and the bench sequence above.
 
 ## How a concept change is made
 
 1. Open an issue that states the claim being changed and the evidence.
 2. If the change is accepted, add a `doc-` row to `CHANGELOG.md`. Do not tag that edition as `vN`.
-3. Update this file and `README.md` if the reading order changes.
+3. Update this file and `README.md` if the reading order or the build steps change.
 4. Remove superseded wording in the same edition.
+5. If a part moves, change `tools/gen_board.py`, regenerate, and commit the plots with the script. A hand-edited Gerber will not match the next run.
