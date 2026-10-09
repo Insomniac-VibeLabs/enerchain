@@ -53,6 +53,7 @@ pytest                               # ledger, meter model, devnet, CLI, RTL == 
 python3 tools/check_rtl.py           # EC-MINT1 RTL vs the Python model, byte for byte
 cc -std=c99 -Wall -Wextra -o /tmp/oracle firmware/qs7001/test/test_sign_oracle.c && /tmp/oracle
 python3 tools/gen_board.py           # regenerate the board files and check the layout rules
+python3 tools/gen_schematics.py      # regenerate the circuit sheets, check values and connections
 ```
 
 Passing lines:
@@ -62,6 +63,7 @@ PASS schedule: 1000 net-export Wh (1 kWh) -> 1 token and 1 record, splits and lo
 PASS rtl == model: 4 signed records byte-exact
 PASS sign_oracle: one keygen, persistent wipe, rollback guard
 bodies clear 82 ... wrote .../gerber regions 7 pads 277
+PASS schematics: values match CIRCUITS.md, connections match netlist.txt
 ```
 
 `gen_board.py` exits non-zero if two nets share copper, two bodies overlap, a pour misses its pad, a mains net comes within 2.5 mm of a logic net, mains copper crosses toward the plane cut, or anything reaches within 3 mm of the edge. Continuous integration runs all of the above on every push ([.github/workflows/ci.yml](../.github/workflows/ci.yml)).
