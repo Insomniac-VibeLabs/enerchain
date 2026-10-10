@@ -1,6 +1,6 @@
 # Electrical review, doc-1.1 to v0.0.1
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09; amended in doc-1.3, see M-8).
+Edition: v0.0.1 (doc-1.2, 2026-10-09; amended in doc-1.3, see M-8, and in doc-1.4, see M-9).
 
 This is the record of checking the EC-SEAL1 board and the EC-MINT1 die against what they are supposed to do: measure energy at the generator or the grid connection, survive a power cut, and sign only what was measured. Each finding says what was wrong, how it was found, and what revision B does instead. Calculations use 240 V rms, 50 Hz unless noted.
 
@@ -80,7 +80,23 @@ A 100 mA time-lag fuse in front of a capacitor-input supply sees an inrush of ab
 
 ### M-8. Signer-rail switch and discharge overlap (doc-1.3)
 
-Q5 and Q4 share CROW_G, a 220 kΩ / 1 µF delay (τ = 0.22 s). Q5 opens once CROW_G passes VDD − |V_th| (2.4–2.9 V for the DMG2305UX); Q4 closes once CROW_G passes its own V_th (1.0–2.5 V for the 2N7002). In the typical case Q4 turns on first, at about 0.22·ln(3.3/1.2) ≈ 0.22 s, and Q5 only opens at about 0.29 s, so with R23 at 47 Ω the overlap would again draw 70 mA from the 50 mA regulator, the C-4 brownout. doc-1.3 makes R23 1 kΩ (same 1206 land): the overlap draws at most 3.3 mA, and the isolated rail (C15, 100 nF) still discharges with a 0.1 ms time constant. Open item O-10 is the bench check.
+Q5 and Q4 share CROW_G, a 220 kΩ / 1 µF delay (τ = 0.22 s; 3.3 s from doc-1.4, M-9). Q5 opens once CROW_G passes VDD − |V_th| (2.4–2.9 V for the DMG2305UX); Q4 closes once CROW_G passes its own V_th (1.0–2.5 V for the 2N7002). In the typical case Q4 turns on first, at about 0.22·ln(3.3/1.2) ≈ 0.22 s, and Q5 only opens at about 0.29 s, so with R23 at 47 Ω the overlap would again draw 70 mA from the 50 mA regulator, the C-4 brownout. doc-1.3 makes R23 1 kΩ (same 1206 land): the overlap draws at most 3.3 mA, and the isolated rail (C15, 100 nF) still discharges with a 0.1 ms time constant. Open item O-10 is the bench check.
+
+### M-9. Signer rail too short for the tamper record (doc-1.4)
+
+doc-1.4 has the QS7001 sign one tamper record after the wipe, with a separate tamper key ([grid-operator.md](grid-operator.md)). The wipe itself still takes microseconds. The tamper record needs the signer powered for up to the 1.1 s ready-poll limit plus a 2454-byte frame at 115 108 baud:
+
+\[
+t_{\text{need}} = 1.1\ \text{s} + \frac{2454 \times 10}{115\,108}\ \text{s} = 1.1 + 0.21 = 1.31\ \text{s}.
+\]
+
+With R22·C14 = 0.22 s, Q5 leaves full enhancement (|V_GS| < 1.8 V, CROW_G > 1.5 V) at 0.22 × ln(3.3/1.8) = 0.13 s and opens by 0.29 s, so the record could not be signed. doc-1.4 makes R22 1.5 MΩ and C14 2.2 µF, τ = 3.3 s:
+
+\[
+t_{\text{full on}} = 3.3 \times \ln\frac{3.3}{1.8} = 2.0\ \text{s}, \qquad 0.7 \times 2.0 = 1.4\ \text{s if C14 reads 30 \% low at 3.3 V},
+\]
+
+both above 1.31 s. Q5 opens at 3.3 × ln(3.3/0.9) = 4.3 s at the earliest. Q4 can conduct from 3.3 × ln(3.3/2.3) = 1.2 s. R23 still holds the overlap to 3.3 mA, now for up to a few seconds, which the regulator carries (C-4, M-8). The meter key is erased at the first `5C 5C`, as before. The longer window keeps only the tamper key alive, and that key signs one kind-1 record and is erased. Same 0603 lands. The DC bias, the gate leakage through 1.5 MΩ, and the sign time are open item O-11. `tools/gen_schematics.py` asserts the margin.
 
 ## Minor
 
@@ -100,6 +116,7 @@ Q5 and Q4 share CROW_G, a 220 kΩ / 1 µF delay (τ = 0.22 s). Q5 opens once CRO
 | MOV | 275 V ac continuous, above 240 V + 10 % | Kept, now Neutral to Line after the fuse |
 | LM2936 | 40 V input, 50 mA output; 0.26 W at 30 mA from 12.1 V | Kept, logic only |
 | Tamper latch | Q2 on at MESH ≈ 0.9 V; R21 gives ~265 µA of hold current against at most ~13 µA through R18 | Kept |
+| Latch load, doc-1.4 | R22 is now 1.5 MΩ, so ZEROIZE sources 2.2 µA into it instead of 15 µA; Q3 drives it easily | Kept |
 | Crystal loads | 27 pF C0G for an 18 pF crystal with a few pF of stray | Kept |
 | FRAM endurance | 10¹⁴ cycles; at 9.6 kW about 10⁸ writes a year | New part, adequate |
 

@@ -13,7 +13,8 @@ import os
 from dataclasses import dataclass
 
 from . import crypto
-from .ledger import TRANSFER_CTX, transfer_body
+from .ledger import (ACCOUNT_CTX, TRANSFER_CTX, contest_body, pair_request_body,
+                     transfer_body)
 
 
 @dataclass
@@ -35,6 +36,23 @@ class Wallet:
         sig = crypto.sign(crypto.ACCOUNT_ALG, self.sk, body, TRANSFER_CTX)
         return {"type": "transfer", "from": self.address, "to": to,
                 "amount": amount_wh, "nonce": nonce, "pk": self.pk.hex(),
+                "sig": sig.hex()}
+
+    def pair_request(self, chain_id: str, gen_id: int, grid_id: int,
+                     load_id: int = 0) -> dict:
+        """File a pair request naming this wallet as beneficiary. It fixes
+        the pair's starting counts now, whenever the certificate lands."""
+        body = pair_request_body(chain_id, gen_id, grid_id, load_id, self.address)
+        sig = crypto.sign(crypto.ACCOUNT_ALG, self.sk, body, ACCOUNT_CTX)
+        return {"type": "pair_request", "gen_id": gen_id, "grid_id": grid_id,
+                "load_id": load_id, "beneficiary": self.address,
+                "pk": self.pk.hex(), "sig": sig.hex()}
+
+    def contest(self, chain_id: str, meter_id: int) -> dict:
+        """Contest a pending revocation of a meter in this wallet's pair."""
+        body = contest_body(chain_id, meter_id)
+        sig = crypto.sign(crypto.ACCOUNT_ALG, self.sk, body, ACCOUNT_CTX)
+        return {"type": "contest", "meter_id": meter_id, "pk": self.pk.hex(),
                 "sig": sig.hex()}
 
     def save(self, path: str) -> None:

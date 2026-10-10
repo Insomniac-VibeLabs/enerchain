@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620" font-family="ui-sans-serif,sans-serif">
   <rect width="1180" height="620" fill="#f7f4ee"/>
   <text x="24" y="32" font-size="16" fill="#111" text-anchor="start">Enerchain mint path — EC-SEAL1 revision B</text>
-  <text x="24" y="52" font-size="12" fill="#444" text-anchor="start">One sealed board per meter, two meters per site. Ground is Line at the shunt. EC-SEAL1 rev B, doc-1.3.</text>
+  <text x="24" y="52" font-size="12" fill="#444" text-anchor="start">One sealed board per meter, two meters per site. Ground is Line at the shunt. EC-SEAL1 rev B, doc-1.4.</text>
   <text x="40" y="98" font-size="11" fill="#444" text-anchor="start">generator</text>
   <text x="1100" y="98" font-size="11" fill="#444" text-anchor="end">grid</text>
   <line x1="40" y1="110" x2="1140" y2="110" stroke="#111" stroke-width="3"/>
@@ -61,5 +61,6 @@
   <text x="680" y="385" font-size="9" fill="#444" text-anchor="start">UART</text>
   <text x="40" y="530" font-size="12" fill="#111" text-anchor="start">GEN board at the generator terminals, GRID board at the connection. Each signs its own cumulative record for every token.</text>
   <text x="40" y="549" font-size="12" fill="#111" text-anchor="start">The ledger verifies both and credits min(T_GEN, T_GRID) less what it already credited: one token per kWh delivered net.</text>
-  <text x="40" y="568" font-size="12" fill="#111" text-anchor="start">No host CPU in the path. Ledger nodes only verify and chain (SHA-384); there is no difficulty and no hash contest.</text>
+  <text x="40" y="568" font-size="12" fill="#111" text-anchor="start">An optional LOAD board on the site's own load mints nothing; it lets the ledger check GEN = GRID + LOAD and flag a tap between them.</text>
+  <text x="40" y="587" font-size="12" fill="#111" text-anchor="start">No host CPU in the path. Ledger nodes only verify and chain (SHA-384); there is no difficulty and no hash contest.</text>
 </svg>

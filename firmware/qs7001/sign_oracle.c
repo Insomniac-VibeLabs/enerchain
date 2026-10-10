@@ -1,26 +1,34 @@
-/* QS7001 signing oracle, v0.0.1 (doc-1.2). Reference image, not a host stack.
+/* QS7001 signing oracle, v0.0.1 (doc-1.4). Reference image, not a host stack.
  *
  * The part is personalized once at the factory, before the cover is sealed:
- * the provisioning flow calls sign_oracle_personalize(), which generates the
- * ML-DSA key on this die, binds the meter id and role, and stores a
- * "personalized" flag in non-volatile memory. The public key is read out by
- * the vendor provisioning interface and published with the image hash.
- * Field update is not a command.
+ * the provisioning flow calls sign_oracle_personalize(), which generates two
+ * ML-DSA keys on this die (the meter key in slot 0, the tamper key in slot
+ * 1), binds the meter id and role, and stores a "personalized" flag in
+ * non-volatile memory. Both public keys are read out by the vendor
+ * provisioning interface and published with the image hash in the meter
+ * certificate. Field update is not a command.
  *
  * doc-1.1 called keygen from the boot routine and kept the wipe flag in RAM,
  * so every power cycle produced a new, uncertified key and a wiped part came
  * back to life. Both are now persistent.
  *
  * SPI mode 0, MSB first, this die is the slave. EC-MINT1 is the only master.
- *   A1, 32-byte record, CRC-8 (poly 0x07, init 0) over the record.
- *     While the signature is computed, the SPI idle fill returns 00.
- *     Then 5A followed by SIG_LEN signature bytes, or EE if refused.
- *   5C 5C: erase the private key, record the wipe, stop answering.
+ *   A1, 32-byte record of kind 0, CRC-8 (poly 0x07, init 0) over the record.
+ *     Signed with the meter key. While the signature is computed, the SPI
+ *     idle fill returns 00. Then 5A followed by SIG_LEN signature bytes, or
+ *     EE if refused.
+ *   5C 5C: erase the meter key, record the wipe. Signing token records ends.
+ *   A7, 32-byte record of kind 1, CRC-8: accepted once, only after a wipe
+ *     and only in the same powered session. Signed with the tamper key,
+ *     which is erased before the signature is released. This is how the
+ *     ledger learns that the cover was opened under power, as opposed to a
+ *     meter that went quiet or was revoked (docs/grid-operator.md).
  * Any other byte is ignored. No command produces a key or a signature over
  * anything but a 32-byte record in the format below.
  *
  * Record (big-endian): id[4] {ver=1,role}[1] class[1] seq[4] e_exp[6]
- *   e_imp[6] tokens[6] cal_crc16[2] zero[2].
+ *   e_imp[6] tokens[6] cal_crc16[2] kind[1] zero[1].
+ * Roles: 1 GEN, 2 GRID, 3 LOAD.
  *
  * Rollback guard: the oracle signs only a record whose seq is strictly
  * greater than the last one it signed and whose three counters do not go
@@ -28,8 +36,15 @@
  * written to non-volatile memory before the signature is released, so a
  * rolled-back FRAM on the board cannot get a lower count signed again.
  *
+ * The tamper record passes the same guard, so it cannot carry lower counts
+ * than the last token record.
+ *
  * GPIO3 is ZEROIZE from the tamper latch. It is checked on every poll, so
- * the key is erased even if EC-MINT1 never sends 5C 5C.
+ * the meter key is erased even if EC-MINT1 never sends 5C 5C. A wiped part
+ * that boots with its tamper key unused erases it then: the tamper record
+ * can only be made while the wipe's own power session lasts, which the
+ * board's signer-rail delay holds open for about 1.3 s
+ * (hardware/fab/ec-seal1/CIRCUITS.md).
  *
  * The qs_* functions are the vendor SDK surface this image needs. Names are
  * placeholders; the QS7001 SDK is under NDA and the mapping is open item O-3
@@ -45,10 +60,15 @@
 #define MSG_LEN 32
 #define Q_WH 1000ULL
 #define NV_MAGIC 0x45433031u    /* "EC01" */
+#define KEY_METER 0
+#define KEY_TAMPER 1
+#define KIND_TOKEN 0
+#define KIND_TAMPER 1
 
-extern void qs_mldsa_keygen(void);                       /* on-die, result stays */
-extern void qs_mldsa_sign(const uint8_t m[MSG_LEN], uint8_t sig[SIG_LEN]);
-extern void qs_key_erase(void);
+/* Two key slots on the part; whether the QS7001 offers two is open item O-3. */
+extern void qs_mldsa_keygen(int slot);                   /* on-die, result stays */
+extern void qs_mldsa_sign(int slot, const uint8_t m[MSG_LEN], uint8_t sig[SIG_LEN]);
+extern void qs_key_erase(int slot);
 extern int  qs_spi_read(uint8_t *b);                     /* 0 on CS deassert */
 extern void qs_spi_write(uint8_t b);
 extern void qs_spi_set_idle_fill(uint8_t b);
@@ -61,7 +81,7 @@ struct nv_state {
     uint8_t  personalized;
     uint8_t  wiped;
     uint8_t  role;
-    uint8_t  pad;
+    uint8_t  tamper_key;        /* 1 while the tamper key exists */
     uint32_t meter_id;
     uint32_t last_seq;
     uint64_t last_exp;
@@ -96,8 +116,14 @@ static void nv_load(void) {
 }
 
 static void wipe(void) {
-    qs_key_erase();
+    qs_key_erase(KEY_METER);
     nv.wiped = 1;
+    qs_nv_write(&nv, sizeof nv);
+}
+
+static void tamper_key_erase(void) {
+    qs_key_erase(KEY_TAMPER);
+    nv.tamper_key = 0;
     qs_nv_write(&nv, sizeof nv);
 }
 
@@ -105,10 +131,12 @@ static void wipe(void) {
  * from the EC-MINT1 SPI. Returns 0 on success, -1 if already personalized. */
 int sign_oracle_personalize(uint32_t meter_id, uint8_t role) {
     nv_load();
-    if (nv.personalized || nv.wiped || (role != 1 && role != 2))
+    if (nv.personalized || nv.wiped || role < 1 || role > 3)
         return -1;
-    qs_mldsa_keygen();
+    qs_mldsa_keygen(KEY_METER);
+    qs_mldsa_keygen(KEY_TAMPER);
     nv.personalized = 1;
+    nv.tamper_key = 1;
     nv.meter_id = meter_id;
     nv.role = role;
     nv.last_seq = 0;
@@ -119,19 +147,21 @@ int sign_oracle_personalize(uint32_t meter_id, uint8_t role) {
 void sign_oracle_boot(void) {
     nv_load();
     qs_spi_set_idle_fill(0x00);
+    if (nv.wiped && nv.tamper_key)
+        tamper_key_erase();     /* the wipe's power session is over */
     if (!nv.wiped && qs_gpio_read(3))
         wipe();
 }
 
 /* Returns 1 if the record may be signed. */
-static int record_ok(const uint8_t m[MSG_LEN]) {
+static int record_ok(const uint8_t m[MSG_LEN], uint8_t kind) {
     uint32_t id = (uint32_t)be(m, 4);
     uint8_t ver = m[4] >> 4, role = m[4] & 0x0F;
     uint32_t seq = (uint32_t)be(m + 6, 4);
     uint64_t e_exp = be(m + 10, 6), e_imp = be(m + 16, 6), tok = be(m + 22, 6);
     if (id != nv.meter_id || ver != 1 || role != nv.role || m[5] != 0x22)
         return 0;
-    if (m[30] != 0 || m[31] != 0)
+    if (m[30] != kind || m[31] != 0)
         return 0;
     if (seq <= nv.last_seq)
         return 0;
@@ -143,10 +173,11 @@ static int record_ok(const uint8_t m[MSG_LEN]) {
 }
 
 void sign_oracle_poll(void) {
-    uint8_t cmd;
-    if (nv.wiped || !nv.personalized)
+    uint8_t cmd, kind;
+    int slot;
+    if (!nv.personalized || (nv.wiped && !nv.tamper_key))
         return;
-    if (qs_gpio_read(3)) {
+    if (!nv.wiped && qs_gpio_read(3)) {
         wipe();
         return;
     }
@@ -154,11 +185,17 @@ void sign_oracle_poll(void) {
         return;
     if (cmd == 0x5C) {
         uint8_t second = 0;
-        if (qs_spi_read(&second) && second == 0x5C)
+        if (qs_spi_read(&second) && second == 0x5C && !nv.wiped)
             wipe();
         return;
     }
-    if (cmd != 0xA1)
+    if (cmd == 0xA1 && !nv.wiped) {
+        kind = KIND_TOKEN;
+        slot = KEY_METER;
+    } else if (cmd == 0xA7 && nv.wiped) {
+        kind = KIND_TAMPER;
+        slot = KEY_TAMPER;
+    } else
         return;
     uint8_t msg[MSG_LEN];
     for (int i = 0; i < MSG_LEN; i++) {
@@ -168,7 +205,7 @@ void sign_oracle_poll(void) {
     uint8_t crc = 0;
     if (!qs_spi_read(&crc) || crc != crc8(msg, MSG_LEN))
         return;
-    if (!record_ok(msg)) {
+    if (!record_ok(msg, kind)) {
         qs_spi_write(0xEE);
         return;
     }
@@ -181,7 +218,9 @@ void sign_oracle_poll(void) {
         return;
     }
     static uint8_t sig[SIG_LEN];
-    qs_mldsa_sign(msg, sig);
+    qs_mldsa_sign(slot, msg, sig);
+    if (slot == KEY_TAMPER)
+        tamper_key_erase();     /* one tamper record, ever */
     qs_spi_write(0x5A);
     for (int i = 0; i < SIG_LEN; i++)
         qs_spi_write(sig[i]);

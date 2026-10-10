@@ -27,12 +27,21 @@ class StandInSigner(SignerOracle):
     def __init__(self) -> None:
         super().__init__()
         self.personalized = True
+        self.tamper_used = False
         self.meter_id, self.role = 0x42, 2
 
     def sign(self, raw: bytes):
         seq = int.from_bytes(raw[6:10], "big")
-        if self.wiped or seq <= self.last[0]:
+        if self.wiped or seq <= self.last[0] or raw[30] != 0:
             return None
+        self.last = (seq,) + self.last[1:]
+        return b""
+
+    def sign_tamper(self, raw: bytes):
+        seq = int.from_bytes(raw[6:10], "big")
+        if not self.wiped or self.tamper_used or seq <= self.last[0] or raw[30] != 1:
+            return None
+        self.tamper_used = True
         self.last = (seq,) + self.last[1:]
         return b""
 
@@ -40,7 +49,7 @@ class StandInSigner(SignerOracle):
 def model_records() -> list[str]:
     """The testbench scenario, step for step (hardware/asic/tb/tb_ec_mint1.v)."""
     signer = StandInSigner()
-    m = EcMint1(fram=Fram(), signer=signer, q=10, sign_every=2)
+    m = EcMint1(fram=Fram(), signer=signer, q=10, sign_every=2, resend_s=20)
     m.pulse_export(30)                                  # before provisioning
     m.provision(calibration_image(0x42, 2, [b"\x11\x22\x33", b"\x44\x55"]))
     m.pulse_export(20)
@@ -55,7 +64,9 @@ def model_records() -> list[str]:
     signer.last = (4,) + signer.last[1:]
     m.pulse_export(20)                                  # seq 4 refused
     m.pulse_export(20)                                  # seq 5
-    m.zeroize()
+    m.idle(20)                                          # re-send, seq 6
+    m.pulse_export(7)
+    m.zeroize()                                         # tamper record, seq 7
     m.pulse_export(40)
     return [r.record.hex() for r in m.records]
 

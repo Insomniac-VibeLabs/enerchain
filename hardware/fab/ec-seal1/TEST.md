@@ -1,6 +1,6 @@
 # EC-SEAL1 test
 
-Edition: v0.0.1 (doc-1.3), board revision B.
+Edition: v0.0.1 (doc-1.4), board revision B.
 
 Every low-voltage net on this board, ground included, is at Line potential. Bench it from a current-limited DC supply first. When the board sees the mains, feed it through an isolation transformer and a series current limiter, and use a differential or isolated probe. Never clip an earthed scope ground to GND.
 
@@ -33,4 +33,10 @@ Every low-voltage net on this board, ground included, is at Line potential. Benc
 
 ## Tamper under power
 
-16. Release the spring. Within a millisecond the signer MOSI has carried `5C 5C`; within half a second Q5 has opened and QS_VDD has collapsed; a further pulse on LED1 produces no frame; VDD stays at 3.3 V ± 3 % throughout (O-10).
+16. Release the spring. Within a millisecond the signer MOSI has carried `5C 5C`, then `A7` and a 32-byte record whose byte 30 is `01`. Within 1.31 s one UART frame carries that record and a signature that verifies under the meter's tamper key and not under its meter key. QS_VDD stays within 20 mV of VDD for at least 1.4 s after ZEROIZE (O-11), and Q5 has opened and QS_VDD has collapsed within 10 s. A further pulse on LED1 produces no frame. VDD stays at 3.3 V ± 3 % throughout (O-10).
+17. Power cut during step 16, before the tamper frame: after power returns, no tamper frame is ever produced, and the QS7001 answers nothing.
+
+## Re-send and LOAD
+
+18. With a test image whose re-send period is shortened (a die built with a small `RESEND_S`), leave the meter idle after one frame. Exactly one more frame appears per period, with the same e_exp, e_imp and tokens and the next seq. On a production die (`RESEND_S` = 86 400 s) the same holds after 24 h with no token.
+19. A board with role 3 in its image, current driven from H2 to H1 for 1 kWh, produces one frame with role nibble 3. Its signature verifies under its meter key.

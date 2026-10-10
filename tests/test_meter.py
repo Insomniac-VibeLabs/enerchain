@@ -3,8 +3,10 @@
 import pytest
 
 from enerchain import crypto
-from enerchain.meter import EcMint1, EnergyMeter, Fram, SignerOracle, calibration_image
-from enerchain.record import ROLE_GEN, ROLE_GRID, MeterRecord, RecordError, crc8, crc16
+from enerchain.meter import (RESEND_S, EcMint1, EnergyMeter, Fram, SignerOracle,
+                             calibration_image)
+from enerchain.record import (KIND_TAMPER, KIND_TOKEN, ROLE_GEN, ROLE_GRID, ROLE_LOAD,
+                              MeterRecord, RecordError, crc8, crc16)
 
 
 def make(q=10, every=2, role=ROLE_GRID, mid=7):
@@ -27,7 +29,11 @@ def test_record_roundtrip_and_reserved_bytes():
     with pytest.raises(RecordError):
         MeterRecord.unpack(raw[:30] + b"\x00\x01")
     with pytest.raises(RecordError):
+        MeterRecord.unpack(raw[:30] + b"\x02\x00")         # no kind 2
+    with pytest.raises(RecordError):
         MeterRecord(1, 1, 1, 1 << 48, 0, 0, 0).pack()
+    t = MeterRecord(1, ROLE_GEN, 6, 12345, 67, 12, 0xBEEF, kind=KIND_TAMPER)
+    assert t.pack()[30] == 1 and MeterRecord.unpack(t.pack()) == t
 
 
 def test_blank_meter_does_not_count():
@@ -127,7 +133,9 @@ def test_zeroize_stops_everything():
     m.pulse_export(100)
     m.power_cycle()
     m.pulse_export(100)
-    assert len(m.records) == 1 and m.signer.wiped
+    # One token record, then the tamper record; nothing after.
+    assert [r.parsed.kind for r in m.records] == [KIND_TOKEN, KIND_TAMPER]
+    assert m.signer.wiped
     with pytest.raises(RuntimeError):
         m.signer.personalize(7, ROLE_GRID)
 
@@ -157,3 +165,88 @@ def test_as_built_meter_signs_every_kwh():
     for x in r:                          # a record is built as its token mints
         p = x.parsed
         assert p.e_exp - p.e_imp == p.tokens * 1000
+
+
+def test_resend_after_a_quiet_day_repeats_the_last_record():
+    m = make(q=10, every=1)
+    m.pulse_export(13)
+    assert len(m.records) == 1
+    m.idle(RESEND_S - 1)
+    assert len(m.records) == 1
+    m.idle(1)
+    assert len(m.records) == 2
+    a, b = m.records[0].parsed, m.records[1].parsed
+    assert b.seq == a.seq + 1 and (b.e_exp, b.e_imp, b.tokens) == (a.e_exp, a.e_imp, a.tokens)
+    assert b.kind == KIND_TOKEN
+    assert crypto.verify("ML-DSA-44", m.signer.pk, m.records[1].record, m.records[1].signature)
+    m.idle(2 * RESEND_S)
+    assert [r.parsed.seq for r in m.records] == [1, 2, 3, 4]
+    m.pulse_export(7)                  # a token restarts the clock
+    m.idle(RESEND_S - 1)
+    assert [r.parsed.seq for r in m.records] == [1, 2, 3, 4, 5]
+
+
+def test_no_resend_until_a_record_since_power_up():
+    m = make(q=10, every=1)
+    m.idle(3 * RESEND_S)
+    assert m.records == []
+    m.pulse_export(10)
+    m.power_cycle()
+    m.idle(3 * RESEND_S)
+    assert len(m.records) == 1
+
+
+def test_zeroize_signs_one_tamper_record_with_the_tamper_key():
+    m = make(q=10, every=1)
+    m.pulse_export(14)
+    m.zeroize()
+    assert len(m.records) == 2
+    sr = m.records[1]
+    r = sr.parsed
+    assert r.kind == KIND_TAMPER and r.seq == 2 and (r.e_exp, r.tokens) == (14, 1)
+    assert crypto.verify("ML-DSA-44", m.signer.tamper_pk, sr.record, sr.signature)
+    assert not crypto.verify("ML-DSA-44", m.signer.pk, sr.record, sr.signature)
+    m.zeroize()
+    m.pulse_export(100)
+    m.idle(2 * RESEND_S)
+    assert len(m.records) == 2
+
+
+def test_tamper_key_does_not_outlive_the_wipe_session():
+    s = SignerOracle(q=10)
+    s.personalize(7, ROLE_GRID)
+    s.wipe()
+    s.boot()                           # power cut before the tamper record
+    raw = MeterRecord(7, ROLE_GRID, 1, 10, 0, 1, 0, kind=KIND_TAMPER).pack()
+    assert s.sign_tamper(raw) is None
+
+
+def test_signer_keeps_record_kinds_apart():
+    s = SignerOracle(q=10)
+    s.personalize(7, ROLE_GRID)
+    tamper = MeterRecord(7, ROLE_GRID, 1, 10, 0, 1, 0, kind=KIND_TAMPER).pack()
+    token = MeterRecord(7, ROLE_GRID, 1, 10, 0, 1, 0).pack()
+    assert s.sign(tamper) is None              # A1 never signs a tamper record
+    assert s.sign_tamper(tamper) is None       # A7 only after a wipe
+    s.wipe()
+    assert s.sign_tamper(token) is None        # A7 never signs a token record
+    assert s.sign_tamper(tamper) is not None
+    assert s.sign_tamper(MeterRecord(7, ROLE_GRID, 2, 10, 0, 1, 0,
+                                     kind=KIND_TAMPER).pack()) is None   # once
+
+
+def test_zeroize_before_arming_makes_no_tamper_record():
+    m = EcMint1(fram=Fram(), signer=SignerOracle())
+    m.signer.personalize(1, ROLE_GEN)
+    m.zeroize()
+    assert m.records == [] and m.signer.wiped
+
+
+def test_load_meter_counts_consumption_as_tokens():
+    em = EnergyMeter(4, ROLE_LOAD)
+    em.step(2500.0, 0.0, 3600)         # 2.5 kWh drawn by the house
+    r = em.take_records()
+    assert [x.parsed.role for x in r] == [ROLE_LOAD, ROLE_LOAD]
+    assert em.mint.tokens == 2
+    with pytest.raises(ValueError):
+        calibration_image(4, 4, [b"\x01"])

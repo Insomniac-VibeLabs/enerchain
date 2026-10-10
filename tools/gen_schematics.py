@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Circuit sheets for EC-SEAL1 revision B, doc-1.3.
+"""Circuit sheets for EC-SEAL1 revision B, doc-1.4.
 
 Writes docs/schematics/01..08 and mint-path.svg. Every number printed on a
 sheet is computed here from the part values, and the script stops if it
@@ -23,7 +23,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 OUT = os.path.join(ROOT, "docs", "schematics")
 NETLIST = os.path.join(ROOT, "hardware", "fab", "ec-seal1", "netlist.txt")
 
-EDITION = "EC-SEAL1 rev B, doc-1.3"
+EDITION = "EC-SEAL1 rev B, doc-1.4"
 
 
 # --------------------------------------------------------------------------
@@ -81,16 +81,25 @@ V_TRIP = VBE * (1 + R18 / R19)
 I_PHOTO = V_TRIP / R17 + V_TRIP / (R18 + R19) - (3.3 - V_TRIP) / R16
 I_HOLD = (3.3 - VBE) / R21 - VBE / R19
 I_RELEASE_MAX = VBE / R18
-TAU_G = 220e3 * 1e-6
+# R22·C14 holds the signer rail up long enough for the tamper record
+# (doc-1.4, M-9): Q5 must stay fully enhanced (|Vgs| >= 1.8 V) through the
+# 1.1 s ready-poll limit and the 0.21 s frame, even with C14 30 % low.
+R22, C14 = 1.5e6, 2.2e-6
+TAU_G = R22 * C14
 T_Q5_OPEN = TAU_G * math.log(3.3 / 0.9)          # |Vth| = 0.9 V, earliest
 T_Q4_ON = TAU_G * math.log(3.3 / (3.3 - 2.1))    # Vth = 2.1 V, typical
+T_Q4_FIRST = TAU_G * math.log(3.3 / (3.3 - 1.0))  # Vth = 1.0 V, earliest
+T_FULL_ON = TAU_G * math.log(3.3 / 1.8)          # CROW_G reaches 1.5 V
+T_FULL_ON_LOW = 0.7 * T_FULL_ON                  # C14 30 % low from DC bias
+T_TAMPER = 1.1 + (2 + 32 + 2420) * 10 / (16e6 / 139)   # poll limit + frame
 R23 = 1.0e3
 I_OVERLAP = 3.3 / R23
 TAU_DIS = R23 * 100e-9
 assert near(V_MESH_CLOSED, 0.30, 0.005) and near(V_TRIP, 0.88, 0.01)
 assert near(I_PHOTO, 70e-6, 3e-6), I_PHOTO
 assert near(I_HOLD, 265e-6, 5e-6) and I_RELEASE_MAX < 13e-6
-assert T_Q4_ON < T_Q5_OPEN and near(T_Q5_OPEN, 0.29, 0.01)
+assert T_Q4_ON < T_Q5_OPEN and near(T_Q5_OPEN, 4.29, 0.01)
+assert near(T_FULL_ON, 2.00, 0.01) and T_TAMPER < T_FULL_ON_LOW, (T_TAMPER, T_FULL_ON_LOW)
 
 # Schedule, record and radio (sheets 05 and 07)
 Q_WH, SIGN_EVERY = 1000, 1
@@ -702,8 +711,10 @@ def sheet_signer():
     s.text(784, u3["UART_TX"][1] + 4, "→ R26 → J4.4, radio (sheet 07)", 10, MUTED)
     s.notes(40, 480, [
         f"q = {Q_WH} Wh: one token per kWh of net export, and a record for every token, so each kWh is signed and credited on its own.",
-        "Record, 32 bytes: id, version/role, class 0x22, seq, e_exp, e_imp, tokens, CRC-16 of the calibration image.",
+        "Record, 32 bytes: id, version/role, class 0x22, seq, e_exp, e_imp, tokens, CRC-16 of the calibration image, kind.",
         f"Built when its token mints (credit = 0), so e_exp − e_imp = 1000·tokens exactly. Frame EC 01 + record + {SIG_BYTES} B = {FRAME} B.",
+        "After a day with no record U3 signs the last one again under a new seq, so a dropped frame comes back without a receive path.",
+        "On ZEROIZE: 5C 5C erases the meter key, then A7 has the tamper key sign one record of kind 1 over the counters, and is erased.",
         f"One ML-DSA-44 sign ≈ 19 mJ against 3.6 MJ in the kWh it attests: {sci(E_SIGN / E_KWH)} of the energy.",
         "The QS7001 signs only records that advance its last signed (seq, e_exp, e_imp, tokens), with tokens·1000 ≤ e_exp.",
         "Counters, seq and the image sit in F-RAM, two CRC-8 slots; a power cut loses at most the pulses since the last write.",
@@ -745,10 +756,10 @@ def sheet_tamper():
     s.text(534, 404, "→ U3 pin 4, U4 GPIO3", 10, RED)
     # signer rail
     s.line(zx, zy, 560, zy)
-    s.R(590, zy, "R22", "220 k")
+    s.R(590, zy, "R22", "1.5 M")
     s.line(620, zy, 760, zy); s.dot(660, zy)
     s.text(668, zy - 6, "CROW_G", 10, MUTED)
-    s.C(660, 360, "C14", "1 µF", side=-1); s.line(660, zy, 660, 330); s.line(660, 390, 660, g)
+    s.C(660, 360, "C14", "2.2 µF", side=-1); s.line(660, zy, 660, 330); s.line(660, 390, 660, g)
     s.line(660, zy, 660, 170); s.line(660, 170, 690, 170)
     s.fet(720, 170, "Q5", "DMG2305UX", p=True)
     s.line(730, 140, 730, rail)
@@ -766,8 +777,10 @@ def sheet_tamper():
         f"Cover on: MESH = 3.3 V × 10 k / 110 k = {V_MESH_CLOSED:.2f} V. Q2 trips at MESH ≈ 0.6 V × (1 + 47 k/100 k) = {V_TRIP:.2f} V.",
         f"Light on PT1 with the spring still closed: about {uA(I_PHOTO)} lifts MESH to the trip point. Latched, R21 feeds Q2 ≈ {uA(I_HOLD)};",
         f"closing the cover again can pull at most {uA(I_RELEASE_MAX)} back through R18, so the latch holds until power is removed.",
-        f"ZEROIZE → U3 sends 5C 5C within microseconds. R22·C14 = {TAU_G:.2f} s: Q4 conducts from ≈ {T_Q4_ON:.2f} s, Q5 opens at ≈ {T_Q5_OPEN:.2f} s.",
-        f"In that overlap R23 = 1 k limits the draw to {mA(I_OVERLAP)}; once Q5 is open C15 discharges with τ = {TAU_DIS * 1e3:.1f} ms. Unpowered tamper is O-1.",
+        f"ZEROIZE → U3 sends 5C 5C within microseconds (meter key erased), then A7 and the tamper record, signed by the tamper key.",
+        f"R22·C14 = {TAU_G:.1f} s: Q5 stays fully on for ≈ {T_FULL_ON:.1f} s ({T_FULL_ON_LOW:.1f} s with C14 30 % low), past the {T_TAMPER:.2f} s the tamper record needs.",
+        f"Q4 conducts from ≈ {T_Q4_FIRST:.1f}–{T_Q4_ON:.1f} s, Q5 opens at ≈ {T_Q5_OPEN:.1f} s. In that overlap R23 = 1 k limits the draw to {mA(I_OVERLAP)};",
+        f"once Q5 is open C15 discharges with τ = {TAU_DIS * 1e3:.1f} ms. Unpowered tamper is O-1.",
     ], size=11, dy=18)
     s.save("06-tamper.svg")
 
@@ -863,6 +876,7 @@ def sheet_mint_path():
     s.notes(40, 530, [
         "GEN board at the generator terminals, GRID board at the connection. Each signs its own cumulative record for every token.",
         "The ledger verifies both and credits min(T_GEN, T_GRID) less what it already credited: one token per kWh delivered net.",
+        "An optional LOAD board on the site's own load mints nothing; it lets the ledger check GEN = GRID + LOAD and flag a tap between them.",
         "No host CPU in the path. Ledger nodes only verify and chain (SHA-384); there is no difficulty and no hash contest.",
     ], size=12)
     s.save("mint-path.svg")

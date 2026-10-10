@@ -1,6 +1,6 @@
 # Solution decision
 
-Edition: v0.0.1 (doc-1.2, 2026-10-09). The choice below is unchanged from doc-1.1. What v0.0.1 corrected is in the second table.
+Edition: v0.0.1 (doc-1.4, 2026-10-10). The choice below is unchanged from doc-1.1. What v0.0.1 corrected is in the second table. doc-1.4 adds the tamper key and the LOAD board ([docs/grid-operator.md](docs/grid-operator.md)).
 
 ## Choice
 
@@ -10,11 +10,11 @@ A program on the inverter, the radio, or a server can report any integral it wan
 
 The manufacturable lock is three pieces, and none of them is left for the factory to invent:
 
-1. **EC-SEAL1 board.** Shunt, divider, supply, tamper latch, meter ASIC and an F-RAM for the counters, with every resistor, capacitor, diode, and transistor called out. Two boards are required for an issuance: a GEN board at the generator terminals and a GRID board at the point of connection. The ledger mints the smaller of the two boards' token counts.
+1. **EC-SEAL1 board.** Shunt, divider, supply, tamper latch, meter ASIC and an F-RAM for the counters, with every resistor, capacitor, diode, and transistor called out. Two boards are required for an issuance: a GEN board at the generator terminals and a GRID board at the point of connection. The ledger mints the smaller of the two boards' token counts. A third board on the site's own load (LOAD) is optional and mints nothing; it lets the ledger see energy taken between the other two.
 2. **EC-MINT1 die.** A small standard-cell chip. It counts export and import watt-hour pulses, mints on net export, keeps its counters through power cuts, and is the only SPI master the signer will ever see. The radio is not on that bus. The foundry synthesizes the Verilog in this repository on its own standard-cell library. It does not choose the schedule, the packet, or the pinout.
-3. **QS7001 signer.** A catalog secure element that already runs ML-DSA in hardware, keeps the private key inside, and has a public QFN-32 pinout. The image is the signing oracle in [firmware/qs7001/sign_oracle.c](firmware/qs7001/sign_oracle.c). It has two commands: sign this 32-byte record, or erase the key. It generates its key once, at personalization, and refuses to sign a record that does not advance the last one it signed. The image hash is published next to the meter’s public key, so a substituted image does not verify.
+3. **QS7001 signer.** A catalog secure element that already runs ML-DSA in hardware, keeps the private key inside, and has a public QFN-32 pinout. The image is the signing oracle in [firmware/qs7001/sign_oracle.c](firmware/qs7001/sign_oracle.c). It has three commands: sign this 32-byte record, erase the key, and, once and only after the erase, sign one tamper record with a second key that it then erases too. It generates both keys once, at personalization, and refuses to sign a record that does not advance the last one it signed. The image hash is published next to the meter’s public key, so a substituted image does not verify.
 
-Non-repudiation is the ML-DSA-44 signature over the record EC-MINT1 built from its own counters. A later party checks the signature, the certified key, the calibration CRC, and that the record's sequence number and cumulative counters advance the previous accepted record. The signer cannot deny the signature. The radio cannot produce one. Opening the cover fires a discrete transistor latch, which orders a key erase and then crowbars the signer rail.
+Non-repudiation is the ML-DSA-44 signature over the record EC-MINT1 built from its own counters. A later party checks the signature, the certified key, the calibration CRC, and that the record's sequence number and cumulative counters advance the previous accepted record. The signer cannot deny the signature. The radio cannot produce one. Opening the cover fires a discrete transistor latch, which orders a key erase, lets the signer sign the one tamper record, and then crowbars the signer rail.
 
 ## What was wrong in the doc-1.1 pack
 

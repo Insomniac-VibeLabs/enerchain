@@ -1,14 +1,14 @@
 # EC-SEAL1 build package
 
-Edition: v0.0.1 (doc-1.2), board revision B. Read this before the plot files.
+Edition: v0.0.1 (doc-1.4), board revision B. Read this before the plot files.
 
-You are building a sealed single-phase meter. You are not choosing the circuit. The parts, the nets, and the mains copper are already decided. Two assemblies ship as a pair: one at the generator terminals (GEN), one at the point of connection to the grid (GRID). Same board. The ledger, not the board, requires both signatures.
+You are building a sealed single-phase meter. You are not choosing the circuit. The parts, the nets, and the mains copper are already decided. Two assemblies ship as a pair: one at the generator terminals (GEN), one at the point of connection to the grid (GRID). Same board. The ledger, not the board, requires both signatures. A site may order a third, identical assembly for its own load (LOAD); only the calibration image and the wiring differ.
 
 Revision B is a bench prototype. It is not a field meter until open item O-1 (tamper while unpowered) is closed. See [docs/open-items.md](../../../docs/open-items.md).
 
 ## What is finished
 
-- [BOM.csv](BOM.csv) is the buy list. One manufacturer part number per line. Do not substitute the shunt, the four 499 kΩ resistors, the MOV, the LNK304, the LDO, the STPM32, the FRAM, or the QS7001.
+- [BOM.csv](BOM.csv) is the buy list. One manufacturer part number per line. Do not substitute the shunt, the four 499 kΩ resistors, the MOV, the LNK304, the LDO, the STPM32, the FRAM, or the QS7001. R22 (1.5 MΩ) and C14 (2.2 µF X7R, 16 V) set how long the signer stays powered after a tamper event; a lower value or a capacitor with more DC-bias loss can stop the tamper record from being signed (doc-1.4, M-9).
 - [netlist.txt](netlist.txt) is the connectivity. Every pin of every part is named. Logic ground is Line on the grid side of the shunt, net `GND`. Neutral is net `N`.
 - [centroid.csv](centroid.csv) is the pick-and-place, millimetres, origin at the board's lower left, rotation in degrees.
 - [CIRCUITS.md](CIRCUITS.md) is the circuit and its calculations.
@@ -51,4 +51,4 @@ The whole board, logic included, is at mains potential. The cover is the insulat
 
 ## Order
 
-One panel, two circuits, both stuffed the same. Mark one GEN and one GRID in the silkscreen after the pair is serialized. The meter id and role are in the calibration image shifted in at the provision jig, not in the stencil.
+One panel, two circuits, both stuffed the same. Mark one GEN and one GRID (and LOAD, if ordered) in the silkscreen after the set is serialized. The meter id and role are in the calibration image shifted in at the provision jig, not in the stencil.

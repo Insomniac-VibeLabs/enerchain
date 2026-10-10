@@ -1,13 +1,16 @@
 // EC-MINT1 end-to-end testbench, v0.0.1. Self-checking.
 // Runs the top with small parameters so a sign fits in simulation time:
 // Q = 10 pulses per token, a record every 2 tokens, 40-byte stand-in
-// signature, 4 clocks per UART bit.
+// signature, 4 clocks per UART bit, a 1000-clock "second" and a re-send
+// after 20 of them.
 //
 // Covers: blank FRAM -> provisioning -> lock; STPM32 SPI-mode select and
 // transcript replay; net-export minting; import cancels export; a power
 // cut between records (counters and sequence survive); a power cut in the
 // middle of a FRAM write (the older slot is used); a signer refusal of a
-// non-advancing sequence; zeroize (5C 5C, signer reset, counting stops).
+// non-advancing sequence; the re-send of the last record after an idle
+// spell; zeroize (5C 5C, then one tamper record signed with the tamper key,
+// signer reset, counting stops).
 //
 // Each accepted record is printed as `REC <64 hex digits>` so that
 // tools/check_rtl.py can compare it with the Python reference model.
@@ -16,6 +19,8 @@ module tb_ec_mint1;
     localparam integer SIGB = 40;
     localparam integer DIV = 4;
     localparam integer FRAME = 2 + 32 + SIGB;
+    localparam integer TICK = 1000;
+    localparam integer RESEND_S = 20;
 
     reg clk = 0;
     reg rst_n = 0;
@@ -28,7 +33,7 @@ module tb_ec_mint1;
     always #31.25 clk = ~clk;
 
     ec_mint1 #(.Q(16'd10), .SIGN_EVERY(8'd2), .SIG_BYTES(SIGB), .UART_DIV(DIV),
-               .T_WAIT(20), .POLL_MAX(2000)) dut (
+               .T_WAIT(20), .POLL_MAX(2000), .TICK(TICK), .RESEND_S(RESEND_S)) dut (
         .XI(clk), .RST_N(rst_n), .CF_EXP(cf_exp), .CF_IMP(cf_imp), .ZEROIZE(zeroize),
         .MINT(mint), .UART_TX(uart),
         .QS_SCK(qs_sck), .QS_MOSI(qs_mosi), .QS_MISO(qs_miso), .QS_CS_N(qs_cs_n),
@@ -171,7 +176,7 @@ module tb_ec_mint1;
     endtask
 
     integer i, t, f0;
-    reg [47:0] w0;
+    reg [47:0] w0, x0, m0, k0;
     initial begin
         for (i = 0; i < 256; i = i + 1) image[i] = 8'h00;
         image[0] = 8'hA5; image[1] = 8'h5A; image[2] = 8'h02;           // role GRID
@@ -258,10 +263,31 @@ module tb_ec_mint1;
         wait_frames(f0 + 1);
         check(frames == f0 + 1 && f32(6) == 32'd5, "next sequence accepted");
 
-        // 8. Zeroize.
+        // 8. Idle: after RESEND_S seconds with no record the last record is
+        //    signed again under the next seq, counters unchanged.
+        x0 = f48(10); m0 = f48(16); k0 = f48(22);
+        f0 = frames;
+        repeat (TICK * (RESEND_S - 4)) @(posedge clk);
+        check(frames == f0, "no re-send before RESEND_S");
+        wait_frames(f0 + 1);
+        check(frames == f0 + 1 && f32(6) == 32'd6, "re-send carries seq 6");
+        check(f48(10) == x0 && f48(16) == m0 && f48(22) == k0, "re-send keeps the counters");
+        check(fb[2+30] == 8'h00, "re-send is a token record");
+
+        // 9. Zeroize: 5C 5C first, then one tamper record, then reset.
+        pulse_exp(7);
+        settle;
+        f0 = frames;
         zeroize = 1;
         repeat (500) @(posedge clk);
         check(qs.wiped == 1'b1, "signer received 5C 5C");
+        wait_frames(f0 + 1);
+        check(frames == f0 + 1, "one tamper record");
+        check(qs.tamper_signs == 1, "signed with the tamper key");
+        check(fb[2+30] == 8'h01, "record kind is tamper");
+        check(f32(6) == 32'd7, "tamper record seq 7");
+        check(f48(10) == x0 + 48'd7 && f48(22) == k0, "tamper record has the live counters");
+        repeat (200) @(posedge clk);
         check(qs_rst_n == 1'b0, "signer held in reset");
         f0 = frames;
         w0 = dut.e_exp;
@@ -273,7 +299,7 @@ module tb_ec_mint1;
         check(bad_sig == 0, "signature bytes streamed intact");
 
         if (fails == 0)
-            $display("PASS ec_mint1: provision, replay, net export, power cuts, refusal, zeroize");
+            $display("PASS ec_mint1: provision, replay, net export, power cuts, refusal, re-send, zeroize, tamper record");
         else
             $display("FAIL %0d checks", fails);
         $finish;

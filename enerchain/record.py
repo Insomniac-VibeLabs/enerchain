@@ -6,15 +6,23 @@ Record, 32 bytes, big-endian fields (hardware/asic/spec.md):
 offset bytes field
 ====== ===== ==================================================
 0      4     meter id
-4      1     version (high nibble, 1) and role (low nibble)
+4      1     version (high nibble, 1) and role (low nibble): 1 GEN,
+             2 GRID, 3 LOAD
 5      1     accuracy class tag, 0x22
 6      4     seq, strictly increasing per meter
 10     6     e_exp, cumulative export watt-hours
 16     6     e_imp, cumulative import watt-hours
 22     6     tokens, cumulative, from the net-export schedule
 28     2     CRC-16/CCITT-FALSE of the factory calibration image
-30     2     zero
+30     1     kind: 0 a token record, 1 a tamper record
+31     1     zero
 ====== ===== ==================================================
+
+A token record (kind 0) is signed by the meter key and is built when a token
+mints, or is a re-send of the last token record with a new seq; either way
+e_exp - e_imp = 1000 * tokens. A tamper record (kind 1) is signed by the
+separate tamper key after the meter key has been erased. It carries the
+counters at the moment the cover opened and mints nothing.
 
 UART frame: ``EC 01``, the record, then the ML-DSA signature.
 """
@@ -28,7 +36,11 @@ VERSION = 1
 CLASS_TAG = 0x22
 ROLE_GEN = 1
 ROLE_GRID = 2
-ROLES = {ROLE_GEN: "GEN", ROLE_GRID: "GRID"}
+ROLE_LOAD = 3
+ROLES = {ROLE_GEN: "GEN", ROLE_GRID: "GRID", ROLE_LOAD: "LOAD"}
+KIND_TOKEN = 0
+KIND_TAMPER = 1
+KINDS = (KIND_TOKEN, KIND_TAMPER)
 FRAME_HEADER = b"\xEC\x01"
 MAX48 = (1 << 48) - 1
 
@@ -66,6 +78,7 @@ class MeterRecord:
     cal_crc: int
     version: int = VERSION
     class_tag: int = CLASS_TAG
+    kind: int = KIND_TOKEN
 
     def pack(self) -> bytes:
         for name, v, bits in (
@@ -77,6 +90,8 @@ class MeterRecord:
                 raise RecordError(f"{name} out of range")
         if not (0 <= self.role < 16 and 0 <= self.version < 16):
             raise RecordError("role or version out of range")
+        if self.kind not in KINDS:
+            raise RecordError("unknown record kind")
         return (
             self.meter_id.to_bytes(4, "big")
             + bytes([(self.version << 4) | self.role, self.class_tag])
@@ -85,15 +100,17 @@ class MeterRecord:
             + self.e_imp.to_bytes(6, "big")
             + self.tokens.to_bytes(6, "big")
             + self.cal_crc.to_bytes(2, "big")
-            + b"\x00\x00"
+            + bytes([self.kind, 0])
         )
 
     @classmethod
     def unpack(cls, raw: bytes) -> "MeterRecord":
         if len(raw) != RECORD_LEN:
             raise RecordError("record must be 32 bytes")
-        if raw[30:32] != b"\x00\x00":
-            raise RecordError("reserved bytes must be zero")
+        if raw[30] not in KINDS:
+            raise RecordError("unknown record kind")
+        if raw[31] != 0:
+            raise RecordError("reserved byte must be zero")
         return cls(
             meter_id=int.from_bytes(raw[0:4], "big"),
             version=raw[4] >> 4,
@@ -104,6 +121,7 @@ class MeterRecord:
             e_imp=int.from_bytes(raw[16:22], "big"),
             tokens=int.from_bytes(raw[22:28], "big"),
             cal_crc=int.from_bytes(raw[28:30], "big"),
+            kind=raw[30],
         )
 
 

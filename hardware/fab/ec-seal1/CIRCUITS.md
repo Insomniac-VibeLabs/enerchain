@@ -1,6 +1,6 @@
 # EC-SEAL1 circuits
 
-Edition: v0.0.1 (doc-1.3), board revision B. Voltages are the 240 V rms, 50/60 Hz service the divider is calculated for. 120 V service uses the same board; the supply is universal-input and the integral is smaller because the voltage is smaller, which is what the meter is supposed to report.
+Edition: v0.0.1 (doc-1.4), board revision B. Voltages are the 240 V rms, 50/60 Hz service the divider is calculated for. 120 V service uses the same board; the supply is universal-input and the integral is smaller because the voltage is smaller, which is what the meter is supposed to report.
 
 Why revision B exists, in one paragraph: in doc-1.1 logic ground was Neutral while the shunt sat in Line, so the STPM32 current inputs were at full mains voltage; the half-wave dropper had D1 reversed and could not charge its rail; even with D1 turned round, 330 nF could source about 11 mA at 240 V and 6.5 mA at 120 V, under the logic load; the signer was fed through 47 Ω; and export energy came out with a negative sign. The calculations are in [docs/electrical-review.md](../../../docs/electrical-review.md).
 
@@ -105,7 +105,7 @@ This is the part that is transistors on purpose. No firmware can clear it except
 
 ## Signer rail
 
-Q5, a DMG2305UX P-channel MOSFET, switches VDD onto QS_VDD. Its gate is CROW_G: ZEROIZE delayed by R22, 220 kΩ, and C14, 1 µF. While CROW_G is low Q5 is fully on; the rail drop is millivolts. About 0.3 s after ZEROIZE rises, CROW_G passes VDD − |V_th| and Q5 opens; Q4, a 2N7002 on the same gate, discharges QS_VDD through R23, 1 kΩ. The two thresholds (Q4 1.0–2.5 V, Q5 −0.4 to −0.9 V) overlap, so for up to about 0.2 s both can conduct; R23 holds that to 3.3 V / 1 kΩ = 3.3 mA, which the regulator does not notice. EC-MINT1 sends `5C 5C` within microseconds of ZEROIZE, long before the rail opens.
+Q5, a DMG2305UX P-channel MOSFET, switches VDD onto QS_VDD. Its gate is CROW_G: ZEROIZE delayed by R22, 1.5 MΩ, and C14, 2.2 µF, τ = 3.3 s. While CROW_G is low Q5 is fully on; the rail drop is millivolts. EC-MINT1 sends `5C 5C` within microseconds of ZEROIZE, and the QS7001 erases its meter key. Then EC-MINT1 sends `A7` and the tamper record, which the QS7001 signs with its tamper key. That takes up to the 1.1 s ready-poll limit plus the 0.21 s frame, 1.31 s. Q5 stays fully enhanced (|V_GS| ≥ 1.8 V) until CROW_G reaches 1.5 V, at 3.3 s × ln(3.3/1.8) = 2.0 s, or 1.4 s if C14 is 30 % low under DC bias. About 4.3 s after ZEROIZE rises, CROW_G passes VDD − |V_th| and Q5 opens; Q4, a 2N7002 on the same gate, discharges QS_VDD through R23, 1 kΩ. The two thresholds (Q4 1.0–2.5 V, Q5 −0.4 to −0.9 V) overlap, so for a few seconds both can conduct; R23 holds that to 3.3 V / 1 kΩ = 3.3 mA, which the regulator does not notice. doc-1.3 had 220 kΩ and 1 µF, τ = 0.22 s, which opened the rail before a tamper record could be signed (M-9). The hold-up is open item O-11.
 
 doc-1.1 fed the signer through a 47 Ω R23 directly and shorted the rail with Q4. Revision B as first drawn kept 47 Ω for the discharge path, which in the overlap above would again have drawn 70 mA; doc-1.3 makes it 1 kΩ. The QS7001's signing current through 47 Ω would have dropped about 1 V, and firing the crowbar drew 70 mA from a 50 mA regulator, browning out the whole board.
 
@@ -119,4 +119,8 @@ Y2 is a 3.3 V CMOS oscillator, 16.000 MHz, into EC-MINT1 XI. R24, 100 kΩ, holds
 
 ## Radio
 
-J4 is six pins. Pin 1 is VRECT, 12 V, pins 2 and 3 are ground, pin 4 is the UART from EC-MINT1 through R26, 100 Ω. Pins 5 and 6 are empty. There is no receive path. The radio module regulates its own supply, must average under 40 mA at 12 V, and must carry a 2454-byte frame (a record and its signature) for every token, every kWh.
+J4 is six pins. Pin 1 is VRECT, 12 V, pins 2 and 3 are ground, pin 4 is the UART from EC-MINT1 through R26, 100 Ω. Pins 5 and 6 are empty. There is no receive path. The radio module regulates its own supply, must average under 40 mA at 12 V, and must carry a 2454-byte frame (a record and its signature) for every token, every kWh, plus at most one re-sent frame a day and one tamper frame in the board's life. Any listener may forward a frame to the ledger; the signature, not the path, is what the ledger checks.
+
+## LOAD board
+
+A LOAD meter is this board with role 3 in its calibration image. It sits on the feed from the site bus to the house load (and to any battery behind it), wired so that consumption runs from H2 to H1: H2, the generator stud, faces the bus; H1, the grid stud and logic ground, faces the load. Consumption then counts as export, and its tokens are consumed kilowatt-hours. It mints nothing. The ledger uses it to check GEN = GRID + LOAD ([docs/grid-operator.md](../../../docs/grid-operator.md)).

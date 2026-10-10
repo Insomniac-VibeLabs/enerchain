@@ -1,6 +1,6 @@
 # Enerchain whitepaper
 
-Edition: v0.0.1 (doc-1.3, 2026-10-09). Sections 3, 4 and 7 are restated for the v0.0.1 issuance rule; the proposal is unchanged.
+Edition: v0.0.1 (doc-1.4, 2026-10-10). Sections 3, 4 and 7 are restated for the v0.0.1 issuance rule; the proposal is unchanged. Section 4 adds the protections against a grid operator that would under-credit a supplier.
 
 ## 1. Plain-language summary
 
@@ -37,6 +37,8 @@ Active energy on a single-phase circuit is the time integral of voltage times cu
 - integrated watt-hours
 
 The meter counts energy in both directions. The schedule is one token per 1000 Wh (1 kWh) of net export, and every token is signed and credited as it is minted: imported energy is subtracted before anything is minted, so energy bought from the grid and sent back mints nothing. The count is computed in a die with no host write port and signed by a secure element that will not sign a record whose counters go backward. Two meters that saw the same energy sign the same token count; the ledger takes the smaller of a pair's two counts, so a meter cannot mint past its partner. The schedule and the hardware are specified in [docs/hardware-binding.md](docs/hardware-binding.md).
+
+The pair rule also gives the other side of the meter a lever. The grid operator owns the wires past the GRID meter and may be one of the certifiers. It cannot forge a lower count. It could disable or revoke the GRID meter, delay pairing, drop frames, or tap energy before the GRID meter. The ledger answers each of these. A revocation takes effect at a stated sequence number, so energy already measured is credited. It waits out a notice period the supplier can contest unless a larger quorum signs it. A meter opened under power signs one last tamper record with a separate key. Energy the GEN meter counted while no GRID meter could count is held in escrow. A pair request fixes the pair's starting counts when it is filed. Anyone may submit a frame, and the meter re-sends after a day without one. With a third, LOAD meter, energy missing between GEN and GRID raises a public flag. Genesis refuses a certifier set in which one sector can approve alone. [docs/grid-operator.md](docs/grid-operator.md) gives the rules and the arithmetic. Physical curtailment of an inverter is not a counting fault and is out of scope.
 
 ## 5. Transfer
 

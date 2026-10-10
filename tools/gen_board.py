@@ -333,11 +333,11 @@ add_part("R21", "10 k", "Yageo RC0603FR-0710KL", "0603", 84, 46, 0, [
     p("1", -0.7, 0, 0.6, 0.7, "ZEROIZE", 0),
     p("2", 0.7, 0, 0.6, 0.7, "Q2B", 0),
 ])
-add_part("R22", "220 k", "Yageo RC0603FR-07220KL", "0603", 84, 40, 0, [
+add_part("R22", "1.5 M", "Yageo RC0603FR-071M5L", "0603", 84, 40, 0, [
     p("1", -0.7, 0, 0.6, 0.7, "ZEROIZE", 0),
     p("2", 0.7, 0, 0.6, 0.7, "CROW_G", 0),
 ])
-add_part("C14", "1 uF", "Murata GRM188R71C105KA12", "0603", 90, 40, 90, [
+add_part("C14", "2.2 uF", "Murata GRM188R71C225KE15", "0603", 90, 40, 90, [
     p("1", -0.7, 0, 0.6, 0.7, "CROW_G", 0),
     p("2", 0.7, 0, 0.6, 0.7, "GND", 0),
 ])
@@ -348,7 +348,10 @@ add_part("C14", "1 uF", "Murata GRM188R71C105KA12", "0603", 90, 40, 90, [
 # 70 mA from a 50 mA regulator. Q4 (Vth 1.0-2.5 V) can turn on before Q5
 # (|Vth| 0.4-0.9 V) has opened, since they share CROW_G, so R23 is 1 k: the
 # overlap draws at most 3.3 mA, and the rail (C15, 100 nF) still discharges in
-# well under a millisecond.
+# well under a millisecond. doc-1.4 lengthens R22*C14 from 0.22 s to 3.3 s so
+# that Q5 stays fully on while the QS7001 signs the one tamper record after
+# the wipe (1.1 s ready-poll limit plus a 0.21 s frame); the meter key itself
+# is still erased within microseconds of ZEROIZE (M-9).
 add_part("Q5", "P-FET rail switch", "Diodes DMG2305UX-7", "SOT-23", 82, 35, 0, [
     p("G", -1.0, 0.9, 0.6, 0.6, "CROW_G", 0),
     p("S", -1.0, -0.9, 0.6, 0.6, "VDD", 0),
