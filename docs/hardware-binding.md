@@ -1,6 +1,6 @@
 # Hardware binding of generation to tokens
 
-Edition: v0.0.1 (doc-1.3, 2026-10-09). The token schedule, the signed payload and the pair rule below replace the doc-0.4 versions; the binding itself is unchanged.
+Edition: v0.0.1 (doc-1.4, 2026-10-10). The token schedule, the signed payload and the pair rule below replace the doc-0.4 versions; the binding itself is unchanged. doc-1.4 adds the record kind, the daily re-send, the tamper record and the LOAD meter.
 
 This note specifies a measurement path whose signed output is the only input to token issuance. The signature is non-repudiable for the energy that passed the sealed terminals. It is proof of that integral. It is not a shipment of energy to another region.
 
@@ -57,7 +57,7 @@ For every token, that is for every kilowatt-hour of net export, the core builds 
 (\text{meter id},\; \text{role},\; \text{class},\; \text{seq},\; E_x,\; E_m,\; T,\; \text{CRC of the calibration image}).
 \]
 
-The record is built the moment its token is minted, when \(c = 0\), so every record satisfies \(E_x - E_m = qT\) exactly. Every field is cumulative, so a record that is lost costs nothing: the next one carries the totals. The exact byte layout is in [hardware/asic/spec.md](../hardware/asic/spec.md). Validators accept a record only if \(\text{seq}\) is greater than the last accepted one and none of \(E_x, E_m, T\) went down. A replayed record fails the sequence check; a deleted record is simply superseded.
+The record is built the moment its token is minted, when \(c = 0\), so every record satisfies \(E_x - E_m = qT\) exactly. After a day with no record the core signs the last record again under the next \(\text{seq}\), with the same \(E_x, E_m, T\), so a frame lost in transit comes back without a receive path. A record also carries a kind byte: 0 for these token records, 1 for the single tamper record described below. Every field is cumulative, so a record that is lost costs nothing: the next one carries the totals. The exact byte layout is in [hardware/asic/spec.md](../hardware/asic/spec.md). Validators accept a record only if \(\text{seq}\) is greater than the last accepted one and none of \(E_x, E_m, T\) went down. A replayed record fails the sequence check; a deleted record is simply superseded.
 
 The registers, the sequence number and the calibration image are kept in an F-RAM inside the seal, in two CRC-checked slots, so a power cut does not reset them. The signer also stores the last values it signed and will not sign lower ones, so rolling the F-RAM back does not produce a second signature over the same energy.
 
@@ -81,7 +81,7 @@ Identity of the core is bound to the silicon, not to a sticker. SRAM startup sta
 
 1. The ADC codes never leave the core except inside a signature.
 2. \(T\) is computed in the core from the pulses. The element signs the record the core built or it signs nothing.
-3. Opening the enclosure zeroizes the key. A later signature from that key fails.
+3. Opening the enclosure zeroizes the key. A later signature from that key fails. The element then signs one tamper record with a second key, kept only for this, and erases that key too, so the ledger can tell a meter that was opened from one that went quiet.
 4. The sequence number and the counters only increase. Replaying an old signature fails the sequence check. Losing a record loses nothing, because the next record is cumulative.
 
 A verifier accepts a record if and only if the signature verifies under the certified key, the calibration CRC matches the certificate, and the sequence number and counters advance. Under those checks the holder cannot deny the core signed that integral. That is the hardware non-repudiation claim.
@@ -92,6 +92,7 @@ Energy through the sealed terminals is what the signature asserts. Forcing a cur
 
 - The import register. Energy that comes in through the meter and goes back out nets to zero, so it does not raise the token count.
 - A second meter. A site has a GEN meter at the generator terminals and a GRID meter at the point of connection, each sealed, each with its own key, both certified as a pair. The ledger credits the pair with \(\min(T_{GEN}, T_{GRID})\). The GEN meter says the energy was generated; the GRID meter says it left the site, net of what came in. Because both counts are cumulative, the two meters never have to report the same interval, and a record that arrives late or not at all does not matter. One meter cannot mint alone.
+- A third meter, optional. A LOAD meter on the site's own consumption lets the ledger check \(T_{GEN} = T_{GRID} + T_{LOAD}\) within a loss allowance. The pair rule already protects the network from a site owner. This check protects the supplier from energy taken between the GEN and GRID meters, by whoever owns the wires there. The LOAD meter mints nothing. [grid-operator.md](grid-operator.md) derives the check.
 
 Software on the inverter, a rewritten host, and a database edit are not on that path. Those are the manipulations this binding is built to refuse. Opening the cover while the meter is unpowered is not yet refused; that is open item O-1 in [open-items.md](open-items.md).
 

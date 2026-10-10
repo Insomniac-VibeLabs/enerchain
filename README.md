@@ -2,7 +2,7 @@
 
 **Power is the new gold.**
 
-Release: **v0.0.1** (documentation edition doc-1.3, 2026-10-09). See [CHANGELOG.md](CHANGELOG.md).
+Release: **v0.0.1** (documentation edition doc-1.4, 2026-10-10). See [CHANGELOG.md](CHANGELOG.md).
 
 ## In plain language
 
@@ -22,21 +22,22 @@ Proof-of-work orders history by hashing and consumes large amounts of electricit
 
 - Hardware-locked issuance from voltage, current, and time.
 - Coins only for energy the meters accepted as delivered to the grid, net of energy taken from it.
+- No one, the grid operator included, can quietly under-credit a supplier: a dropped, revoked or disabled meter leaves a public record, and energy that can be shown to be missing is recoverable.
 - Public ledger, easy transfer, non-repudiation.
 - Individuals and larger plants on the same evidence rule.
 - One measurement language from a feeder to a planetary region.
 
 ## Worked example
 
-A home array delivers 10 kWh more to the grid than the house takes from it. The GRID meter at the connection counts 10 000 export pulses net of import and mints 10 tokens inside the seal, one per 1000 pulses (1 kWh); the GEN meter at the array terminals counts what the panels produced. Each meter signs a cumulative record for every token, so each kilowatt-hour reaches the ledger on its own. The ledger checks both signatures and credits min(GEN tokens, GRID tokens) to the owner's account, one token per kilowatt-hour. The holder transfers them with an account signature. A battery that buys from the grid at night and sells back at noon mints nothing.
+A home array delivers 10 kWh more to the grid than the house takes from it. The GRID meter at the connection counts 10 000 export pulses net of import and mints 10 tokens inside the seal, one per 1000 pulses (1 kWh); the GEN meter at the array terminals counts what the panels produced. Each meter signs a cumulative record for every token, so each kilowatt-hour reaches the ledger on its own. The ledger checks both signatures and credits min(GEN tokens, GRID tokens) to the owner's account, one token per kilowatt-hour. The holder transfers them with an account signature. A battery that buys from the grid at night and sells back at noon mints nothing. If the GRID meter goes silent, is revoked or is opened, the ledger holds what the GEN meter counted in escrow instead of dropping it. If a LOAD meter shows that GEN − GRID − LOAD is above the site's loss allowance, the ledger raises a public flag: energy was taken before the GRID meter. [docs/grid-operator.md](docs/grid-operator.md) covers these cases.
 
 ## Status
 
 v0.0.1 is the first version with software you can run:
 
-- **Ledger, wallet and devnet** in Python (`enerchain/`), with the issuance rule, k-of-n meter certification, transfers and proof-of-authority blocks. `pip install -e '.[test]' && pytest && enerchain demo`. See [docs/software.md](docs/software.md).
-- **EC-MINT1 RTL** that simulates end to end (provisioning, net-export minting, power cuts, signer refusal, zeroize) and matches the Python meter model byte for byte.
-- **QS7001 signing image** with one-time keygen, a persistent wipe and a rollback guard, unit-tested on the host.
+- **Ledger, wallet and devnet** in Python (`enerchain/`), with the issuance rule, k-of-n meter certification with sector limits, revocation with notice and contest, meter replacement, outage escrow, the GEN = GRID + LOAD balance check, transfers and proof-of-authority blocks. `pip install -e '.[test]' && pytest && enerchain demo`. See [docs/software.md](docs/software.md).
+- **EC-MINT1 RTL** that simulates end to end (provisioning, net-export minting, power cuts, signer refusal, daily re-send, zeroize and the tamper record) and matches the Python meter model byte for byte.
+- **QS7001 signing image** with one-time keygen of a meter key and a tamper key, a persistent wipe, one tamper signature and a rollback guard, unit-tested on the host.
 - **EC-SEAL1 revision B** board files from `tools/gen_board.py`, after an electrical review that found the doc-1.1 board could not have worked: [docs/electrical-review.md](docs/electrical-review.md).
 
 Nothing has been built or taped out. Revision B is a bench prototype: opening the cover while the meter is unpowered is not yet detected. [docs/open-items.md](docs/open-items.md) lists that and every other assumption still to verify. There is still no GDSII.
@@ -57,6 +58,7 @@ Start with [docs/how-to.md](docs/how-to.md). It is the reading order, the softwa
 | [Meter burden](docs/meter-burden.md) | How little electricity may the mint path use? |
 | [Electrical review](docs/electrical-review.md) | What was wrong with the doc-1.1 board, and what revision B does instead? |
 | [Threat model](docs/threat-model.md) | Who might mint falsely, and what stops them? |
+| [A dishonest grid operator](docs/grid-operator.md) | Can the grid side under-credit a supplier or take energy before its meter? |
 | [Open items](docs/open-items.md) | What is assumed, unverified, or not built? |
 | [Software](docs/software.md) | How do I run the ledger, wallet and devnet? |
 | [Schematic](docs/schematics/mint-path.svg) | The revision B mint path on one page. |

@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" font-family="ui-sans-serif,sans-serif">
   <rect width="960" height="520" fill="#f7f4ee"/>
   <text x="24" y="32" font-size="16" fill="#111" text-anchor="start">08 — Burden chart</text>
-  <text x="24" y="52" font-size="12" fill="#444" text-anchor="start">Voltage-circuit draw of revision B against the 2 W IEC 62052-11 cap and the 1.5 W field target. EC-SEAL1 rev B, doc-1.3.</text>
+  <text x="24" y="52" font-size="12" fill="#444" text-anchor="start">Voltage-circuit draw of revision B against the 2 W IEC 62052-11 cap and the 1.5 W field target. EC-SEAL1 rev B, doc-1.4.</text>
   <text x="250" y="118" font-size="12" fill="#111" text-anchor="end">logic at 12 V (30 mA)</text>
   <rect x="260" y="100" width="109.021" height="26" fill="#cfc6b4" stroke="#111" stroke-width="1"/>
   <text x="377.021" y="118" font-size="11" fill="#111" text-anchor="start">0.36 W</text>

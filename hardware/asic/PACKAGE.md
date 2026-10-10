@@ -1,6 +1,6 @@
 # EC-MINT1 package
 
-Edition: v0.0.1 (doc-1.3). The assembly house builds this drawing. It does not redesign the leadframe.
+Edition: v0.0.1 (doc-1.4). The assembly house builds this drawing. It does not redesign the leadframe.
 
 ## Body
 
@@ -32,7 +32,8 @@ Matched on EC-SEAL1 and repeated here so the two houses share one number:
 - Schedule: 1000 rising edges on CF_EXP produce one MINT pulse; 500 edges on CF_IMP followed by 1500 on CF_EXP produce one; every token starts a record. The vector is [tb/tb_schedule.v](tb/tb_schedule.v) and the executable spec is [../../tools/check_schedule.py](../../tools/check_schedule.py)
 - Provision: with a blank FRAM, shift an image, observe CAL_LOCKED rise and the image and lock marker written to FRAM; observe that PROV_MISO never toggles with the image bits
 - Power cut: remove RST_N between records and in the middle of a FRAM write; counters and sequence come back from FRAM. The vector is [tb/tb_ec_mint1.v](tb/tb_ec_mint1.v)
-- Zeroize: a high on ZEROIZE produces `5C 5C` on QS_MOSI, then QS_RST_N stays low and counting stops
+- Zeroize: a high on ZEROIZE produces `5C 5C` on QS_MOSI, then `A7` and a record with byte 30 = 01; the signed frame appears on UART_TX; then QS_RST_N stays low and counting stops
+- Re-send: with `RESEND_S` shortened by a test parameter, an idle die signs its last record again under the next seq with the same counters
 - No vector reads a key, because this die does not hold one
 
 ## What the foundry still does

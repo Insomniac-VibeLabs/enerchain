@@ -1,6 +1,6 @@
 # EC-MINT1 pinout
 
-Edition: v0.0.1 (doc-1.2). Package is QFN-32, 5.00 mm × 5.00 mm, 0.50 mm pitch, exposed pad. Pin 1 is the top-left corner of the top view, then counterclockwise.
+Edition: v0.0.1 (doc-1.4). Package is QFN-32, 5.00 mm × 5.00 mm, 0.50 mm pitch, exposed pad. Pin 1 is the top-left corner of the top view, then counterclockwise.
 
 The bond diagram is the pin list. Do not swap pins to make the place-and-route easier.
 
@@ -66,4 +66,4 @@ To the QS7001, and to nobody else:
 3. On `5A`: UART `EC 01` and the 32-byte record, then clock one signature byte at a time and UART each one before clocking the next.
 4. CS high.
 
-The record layout is in [spec.md](spec.md). Wipe is command `5C 5C`, then QS_RST_N is held low and the counter stops.
+The record layout is in [spec.md](spec.md). Wipe is command `5C 5C`, then `A7` and one tamper record signed by the tamper key, then QS_RST_N is held low and the counter stops. No pin changed in doc-1.4.

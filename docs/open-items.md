@@ -1,6 +1,6 @@
 # Open items
 
-Edition: v0.0.1 (doc-1.3, 2026-10-09).
+Edition: v0.0.1 (doc-1.4, 2026-10-10).
 
 What is not done, what was assumed, and what has to be true before a meter leaves the bench. "Verify" items are facts about a catalog part that the review could not read from the datasheet here; the design assumes them and says where.
 
@@ -10,11 +10,13 @@ What is not done, what was assumed, and what has to be true before a meter leave
 
 **O-2. STPM32 configuration (verify).** The design assumes, from DocID025358: LED1 can be configured to pulse on positive active energy only and LED2 on negative active energy only, both at 1000 impulses/kWh; the SPI interface is selected by SCS low across the EN rising edge; SCS is active low in SPI mode. If the LED outputs cannot be split by sign, the fallback is to read the signed active-energy register over SPI instead of counting LED pulses, which is an RTL change, not a board change. The register addresses for the factory transcript are deliberately not in this tree.
 
-**O-3. QS7001 (verify).** Public material confirms a RISC-V secure microcontroller with hardware ML-DSA (ML-DSA-87 is named) and ML-KEM. Still to confirm under the vendor's datasheet and SDK: that ML-DSA-44 is offered (if not, set `SIG_BYTES = 4627` and certify meters as ML-DSA-87; the ledger supports both); that a customer image like `firmware/qs7001/sign_oracle.c` can be loaded and locked; non-volatile storage for the rollback guard; the QFN-32 pin map used on the board (from the vendor summary 6658GS); its supply range and signing current.
+**O-3. QS7001 (verify).** Public material confirms a RISC-V secure microcontroller with hardware ML-DSA (ML-DSA-87 is named) and ML-KEM. Still to confirm under the vendor's datasheet and SDK: that the part holds two independent ML-DSA key slots, each erasable on its own (doc-1.4 uses slot 0 for the meter key and slot 1 for the tamper key; if the part has one slot, the tamper record must be dropped or signed by a second secure element); that ML-DSA-44 is offered (if not, set `SIG_BYTES = 4627` and certify meters as ML-DSA-87; the ledger supports both); that a customer image like `firmware/qs7001/sign_oracle.c` can be loaded and locked; non-volatile storage for the rollback guard; the QFN-32 pin map used on the board (from the vendor summary 6658GS); its supply range and signing current.
 
 **O-4. LNK304 design values (verify).** The buck uses the standard LinkSwitch-TN high-side buck values: 1 mH inductors, 4.7 µF 400 V input capacitors, feedback 13.0 kΩ / 2.05 kΩ for 12 V with a 1.65 V FB reference, ultrafast freewheel diode. Confirm against the LNK304 datasheet and run the PI design tool for the 12 V, 70 mA load. Confirm the RLB0914-102KL saturation current exceeds the LNK304 current limit.
 
 **O-10. Signer-rail gate thresholds (verify).** Q5 (DMG2305UX) and Q4 (2N7002) share the delayed gate CROW_G. With the datasheet threshold spreads, Q4 can turn on before Q5 has opened; R23 = 1 kΩ limits that overlap to 3.3 mA. Confirm on the bench that VDD does not sag when ZEROIZE fires (TEST.md step 16).
+
+**O-11. Signer-rail hold-up for the tamper record (verify).** doc-1.4 makes R22 1.5 MΩ and C14 2.2 µF (τ = 3.3 s) so that Q5 stays fully enhanced for the tamper record: 2.0 s nominal, 1.4 s with C14 30 % low, against the 1.31 s the record needs (M-9). Confirm on the bench: the GRM188R71C225KE15 effective capacitance at 3.3 V DC bias; the gate leakage of Q5 and Q4 through 1.5 MΩ (100 nA would leave CROW_G 0.15 V short of 3.3 V, still above the 2.9 V Q5 needs to open at |V_th| = 0.4 V); the DMG2305UX on-resistance at V_GS = −1.8 V against the QS7001 signing current; and the QS7001's actual sign time, which may allow a shorter delay.
 
 **O-5. LM2936 output capacitor (verify).** C3 is a 10 µF ceramic. Confirm it falls inside the LM2936 output-capacitor ESR stability region; if not, fit a 10 µF tantalum or add series resistance.
 
@@ -40,6 +42,10 @@ What is not done, what was assumed, and what has to be true before a meter leave
 
 **S-6. Value.** Supply grows with net generation and has no cap; nothing redeems a token for energy. What makes a token worth holding (acceptance for settlement in a regional book, utility participation, demand from compute loads) is the economic hypothesis this repository states, not something the code establishes.
 
-**S-7. Meter lifecycle.** Certification exists; key rotation, meter replacement, and moving a pair to a new beneficiary are not specified.
+**S-7. Meter lifecycle.** Certification exists. doc-1.4 adds meter replacement: a pair can rebind a revoked or wiped meter to a newly certified one with k approvals, and the side keeps counting across both ([grid-operator.md](grid-operator.md)). Key rotation and moving a pair to a new beneficiary are still not specified.
+
+**S-9. Order of delivery and the balance check.** The GEN = GRID + LOAD check is a lower bound only if records reach the ledger in the order they were built. A record held back can lower it, or raise it by what was held back, until the next GRID/LOAD pairing. The flag therefore moves no credit; attestation does. A trusted time in the record (S-8) would remove the assumption.
+
+**S-10. Limits of the grid-operator rules.** A tap smaller than a pair's loss allowance is not flagged, and a site without a LOAD meter has no balance check, only the installation rule and inspection. GRID-only energy during a GEN-meter failure is not escrowed. A battery on the bus between GEN and GRID, not behind LOAD, defeats the balance check. The 2 % default allowance is a placeholder; each pair's should come from its survey. The notice period (30 days) and silence period (3 days) are devnet defaults, not a governance decision.
 
 **S-8. Time.** Records carry no wall-clock time; the ledger orders them by sequence number and dates them at inclusion. Time-of-use pricing per region would need a trusted time source in the meter.

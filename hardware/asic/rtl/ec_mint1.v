@@ -1,4 +1,4 @@
-// EC-MINT1, v0.0.1 (doc-1.2).
+// EC-MINT1, v0.0.1 (doc-1.4).
 // Hardwired net-export watt-hour schedule, the only SPI master the signer
 // ever sees, and a power-fail-safe FRAM image of the counters and of the
 // factory calibration transcript. The ML-DSA private key is not in this die.
@@ -25,6 +25,20 @@
 //  - The STPM32 is put in SPI mode on its EN rising edge with SCS low, and
 //    STP_CS_N is active low.
 //
+// What changed in doc-1.4, and why (docs/grid-operator.md):
+//  - Re-send. After RESEND_S seconds with no record, the die signs the last
+//    token record again under a new seq. A frame dropped on the way to the
+//    ledger (by a relay that the grid operator runs, say) comes back without
+//    a receive path, and a live meter is heard from at least once a day.
+//  - Tamper record. On ZEROIZE the die still sends 5C 5C first, so the meter
+//    key is gone within microseconds. Then it sends A7 and a record of kind 1
+//    over the counters as they stand; the QS7001 signs it with a separate
+//    tamper key and erases that key. The ledger can then tell a cover opened
+//    under power from a meter that went quiet or was revoked.
+//  - Role 3, LOAD: the same board, wired so that site consumption flows
+//    generator stud to grid stud. Its tokens count consumed kWh. It mints
+//    nothing; the ledger uses it for the GEN = GRID + LOAD energy balance.
+//
 // FRAM map (byte addresses):
 //   0x0000 state slot A, 36 bytes   0x0040 state slot B, 36 bytes
 //   0x0100 calibration image, 256 bytes
@@ -36,7 +50,8 @@
 // Signed record, 32 bytes, big-endian fields:
 //   0-3 meter id   4 {version=1, role}   5 class 0x22   6-9 seq
 //   10-15 e_exp Wh   16-21 e_imp Wh   22-27 tokens (cumulative)
-//   28-29 CRC-16 of the calibration image   30-31 zero
+//   28-29 CRC-16 of the calibration image   30 kind (0 token, 1 tamper)
+//   31 zero
 // UART frame: EC 01, the 32-byte record, then SIG_BYTES signature bytes.
 module ec_mint1 #(
     parameter [15:0] Q          = 16'd1000,  // pulses (Wh) per token
@@ -44,7 +59,9 @@ module ec_mint1 #(
     parameter integer SIG_BYTES = 2420,      // ML-DSA-44; 4627 for ML-DSA-87
     parameter integer UART_DIV  = 139,
     parameter integer T_WAIT    = 16000,     // 1 ms STPM32 select timing
-    parameter integer POLL_MAX  = 1000000    // about 1.1 s of ready polls
+    parameter integer POLL_MAX  = 1000000,   // about 1.1 s of ready polls
+    parameter integer TICK      = 16000000,  // clocks per second
+    parameter integer RESEND_S  = 86400      // re-send after a day with no record
 ) (
     input  wire XI,
     input  wire RST_N,
@@ -230,7 +247,7 @@ module ec_mint1 #(
     // Sign FSM
     localparam S_IDLE = 4'd0, S_CMD = 4'd1, S_POLL = 4'd2, S_HDR = 4'd3,
                S_SIGQ = 4'd4, S_SIGU = 4'd5, S_END = 4'd6, S_W0 = 4'd7,
-               S_W1 = 4'd8, S_DEAD = 4'd9;
+               S_W1 = 4'd8, S_DEAD = 4'd9, S_TG = 4'd10;
     reg [3:0]  sst;
     reg [5:0]  si;
     reg [12:0] sig_i;
@@ -240,6 +257,14 @@ module ec_mint1 #(
     reg [7:0]  m_crc;
     reg [31:0] m_seq;
     reg [47:0] m_exp, m_imp, m_tok;
+    reg [7:0]  m_kind;       // record byte 30: 0 token, 1 tamper
+    reg [7:0]  m_cmd;        // A1 sign with the meter key, A7 tamper key
+    reg        have_m;       // m_* hold a record the signer accepted
+    reg        tomb;         // the record in flight is the tamper record
+    reg        wipe_done;    // 5C 5C has been sent
+
+    // Re-send timer: seconds since the last record was started.
+    reg [31:0] tick_c, idle_s;
 
     // Byte i of the record being signed
     function [7:0] msg_byte;
@@ -276,6 +301,7 @@ module ec_mint1 #(
             6'd27: msg_byte = m_tok[7:0];
             6'd28: msg_byte = cal_crc[15:8];
             6'd29: msg_byte = cal_crc[7:0];
+            6'd30: msg_byte = m_kind;
             default: msg_byte = 8'h00;
             endcase
         end
@@ -359,6 +385,8 @@ module ec_mint1 #(
             sst <= S_IDLE; si <= 6'd0; sig_i <= 13'd0; polls <= 20'd0;
             q_wait <= 1'b0; u_wait <= 1'b0; sign_pending <= 1'b0; m_crc <= 8'd0;
             m_seq <= 32'd0; m_exp <= 48'd0; m_imp <= 48'd0; m_tok <= 48'd0;
+            m_kind <= 8'd0; m_cmd <= 8'hA1; have_m <= 1'b0; tomb <= 1'b0; wipe_done <= 1'b0;
+            tick_c <= 32'd0; idle_s <= 32'd0;
         end else begin
             fr_start <= 1'b0;
             st_start <= 1'b0;
@@ -509,7 +537,8 @@ module ec_mint1 #(
                 role <= rom[2];
                 meter_id <= {rom[3], rom[4], rom[5], rom[6]};
                 if (rom[0] == 8'hA5 && rom[1] == 8'h5A &&
-                    (rom[2] == 8'h01 || rom[2] == 8'h02) && rom[7] != 8'h00) begin
+                    (rom[2] == 8'h01 || rom[2] == 8'h02 || rom[2] == 8'h03) &&
+                    rom[7] != 8'h00) begin
                     bst <= B_SEL; selph <= 2'd0; tw <= 16'd0;
                 end else
                     bst <= B_HALT; // empty or malformed transcript: do not arm
@@ -606,6 +635,16 @@ module ec_mint1 #(
                 endcase
             end
 
+            // ---------------- re-send timer -------------------------------
+            if (booted) begin
+                if (tick_c == TICK - 1) begin
+                    tick_c <= 32'd0;
+                    if (idle_s != RESEND_S)
+                        idle_s <= idle_s + 32'd1;
+                end else
+                    tick_c <= tick_c + 32'd1;
+            end
+
             // ---------------- sign FSM ------------------------------------
             case (sst)
             S_IDLE: begin
@@ -615,16 +654,29 @@ module ec_mint1 #(
                     seq <= seq + 32'd1;
                     dirty <= 1'b1;
                     m_exp <= e_exp; m_imp <= e_imp; m_tok <= tokens;
+                    m_kind <= 8'd0; m_cmd <= 8'hA1;
                     m_crc <= 8'd0; si <= 6'd0;
+                    tick_c <= 32'd0; idle_s <= 32'd0;
+                    qs_cs <= 1'b1;
+                    sst <= S_CMD;
+                end else if (booted && count_en && have_m && idle_s == RESEND_S &&
+                             !zeroize) begin
+                    // Re-send: the last accepted record's counters, new seq.
+                    m_seq <= seq + 32'd1;
+                    seq <= seq + 32'd1;
+                    dirty <= 1'b1;
+                    m_kind <= 8'd0; m_cmd <= 8'hA1;
+                    m_crc <= 8'd0; si <= 6'd0;
+                    tick_c <= 32'd0; idle_s <= 32'd0;
                     qs_cs <= 1'b1;
                     sst <= S_CMD;
                 end
             end
-            // A1, 32 record bytes, CRC-8
+            // A1 (or A7), 32 record bytes, CRC-8
             S_CMD: begin
                 if (!q_wait && !qs_busy) begin
                     if (si == 6'd0)
-                        qs_tx <= 8'hA1;
+                        qs_tx <= m_cmd;
                     else if (si <= 6'd32) begin
                         qs_tx <= msg_byte(si - 6'd1);
                         m_crc <= crc8(m_crc, msg_byte(si - 6'd1));
@@ -647,8 +699,10 @@ module ec_mint1 #(
                     q_wait <= 1'b0;
                     if (qs_rx == 8'h5A) begin
                         sst <= S_HDR; si <= 6'd0;
+                        have_m <= !tomb;
                     end else if (qs_rx == 8'hEE || polls == POLL_MAX[19:0]) begin
                         sst <= S_END;
+                        have_m <= 1'b0;
                     end else
                         polls <= polls + 20'd1;
                 end
@@ -690,7 +744,7 @@ module ec_mint1 #(
             end
             S_END: begin
                 qs_cs <= 1'b0;
-                sst <= S_IDLE;
+                sst <= tomb ? S_DEAD : S_IDLE;
             end
             // Wipe: release CS so the signer resets its parser, then 5C 5C.
             S_W0: begin
@@ -708,13 +762,36 @@ module ec_mint1 #(
                         qs_tx <= 8'h5C; qs_start <= 1'b1; q_wait <= 1'b1;
                     end else begin
                         qs_cs <= 1'b0;
-                        qs_rst_n <= 1'b0;
-                        sst <= S_DEAD;
+                        wipe_done <= 1'b1;
+                        if (booted) begin
+                            // The meter key is gone. Ask for one tamper
+                            // record over the counters as they stand.
+                            m_seq <= seq + 32'd1;
+                            seq <= seq + 32'd1;
+                            dirty <= 1'b1;
+                            m_exp <= e_exp; m_imp <= e_imp; m_tok <= tokens;
+                            m_kind <= 8'd1; m_cmd <= 8'hA7;
+                            m_crc <= 8'd0; si <= 6'd0;
+                            tomb <= 1'b1;
+                            sst <= S_TG;
+                        end else begin
+                            qs_rst_n <= 1'b0;
+                            sst <= S_DEAD;
+                        end
                     end
                 end else if (qs_done) begin
                     q_wait <= 1'b0;
                     si <= si + 6'd1;
                 end
+            end
+            // CS high for 16 clocks between 5C 5C and A7.
+            S_TG: begin
+                if (si == 6'd15) begin
+                    si <= 6'd0;
+                    qs_cs <= 1'b1;
+                    sst <= S_CMD;
+                end else
+                    si <= si + 6'd1;
             end
             default: begin // S_DEAD
                 qs_cs <= 1'b0;
@@ -726,7 +803,7 @@ module ec_mint1 #(
             if (zeroize) begin
                 count_en <= 1'b0;
                 sign_pending <= 1'b0;
-                if (sst != S_W0 && sst != S_W1 && sst != S_DEAD)
+                if (!wipe_done && sst != S_W0 && sst != S_W1 && sst != S_DEAD)
                     sst <= S_W0;
             end
         end

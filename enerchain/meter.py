@@ -8,7 +8,7 @@ firmware/qs7001/sign_oracle.c rule for rule, so that
   signed records byte for byte, and
 - the development network can be fed records that a real pair would produce.
 
-It models events (pulses, power cuts, tamper), not clock cycles.
+It models events (pulses, power cuts, tamper, idle time), not clock cycles.
 """
 
 from __future__ import annotations
@@ -16,12 +16,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from . import crypto
-from .record import (CLASS_TAG, MAX48, ROLE_GEN, ROLE_GRID, MeterRecord,
-                     crc8, crc16)
+from .record import (CLASS_TAG, KIND_TAMPER, KIND_TOKEN, MAX48, ROLE_GEN,
+                     ROLE_GRID, ROLE_LOAD, MeterRecord, crc8, crc16)
 
 Q_WH = 1000
 SIGN_EVERY = 1     # one signed record, and one ledger credit, per token (1 kWh)
+RESEND_S = 86400   # re-send the last token record after a day with no record
 CMIN = -(1 << 47)
+METER_ROLES = (ROLE_GEN, ROLE_GRID, ROLE_LOAD)
 
 ROM_ADDR = 0x0100
 LOCK_ADDR = 0x0200
@@ -30,8 +32,8 @@ SLOT_ADDR = (0x0000, 0x0040)
 
 def calibration_image(meter_id: int, role: int, frames: list[bytes]) -> bytes:
     """Factory image: A5 5A role id[4] then length-prefixed STPM32 frames."""
-    if role not in (ROLE_GEN, ROLE_GRID):
-        raise ValueError("role must be GEN (1) or GRID (2)")
+    if role not in METER_ROLES:
+        raise ValueError("role must be GEN (1), GRID (2) or LOAD (3)")
     body = b"\xA5\x5A" + bytes([role]) + meter_id.to_bytes(4, "big")
     for f in frames:
         if not 0 < len(f) < 256:
@@ -57,7 +59,13 @@ class Fram:
 
 
 class SignerOracle:
-    """QS7001 image semantics (firmware/qs7001/sign_oracle.c)."""
+    """QS7001 image semantics (firmware/qs7001/sign_oracle.c).
+
+    Two keys are made at personalization. The meter key signs token records.
+    The tamper key signs one tamper record, after the meter key has been
+    erased, in the same powered session as the wipe; then it is erased too.
+    A power cycle after a wipe erases the tamper key unused.
+    """
 
     def __init__(self, alg: str = crypto.METER_ALG, seed: bytes | None = None,
                  q: int = Q_WH) -> None:
@@ -66,6 +74,8 @@ class SignerOracle:
         self.seed = seed
         self.pk: bytes | None = None
         self._sk: bytes | None = None
+        self.tamper_pk: bytes | None = None
+        self._tamper_sk: bytes | None = None
         self.personalized = False
         self.wiped = False
         self.meter_id = 0
@@ -77,6 +87,8 @@ class SignerOracle:
         if self.personalized or self.wiped:
             raise RuntimeError("already personalized")
         self.pk, self._sk = crypto.keygen(self.alg, self.seed)
+        tseed = None if self.seed is None else crypto.sha384(self.seed + b"tamper")[:32]
+        self.tamper_pk, self._tamper_sk = crypto.keygen(self.alg, tseed)
         self.keygens += 1
         self.personalized = True
         self.meter_id, self.role = meter_id, role
@@ -86,23 +98,42 @@ class SignerOracle:
         self._sk = None
         self.wiped = True
 
-    def sign(self, raw: bytes) -> bytes | None:
-        """Return the signature, or None for a refusal (EE) or a dead part."""
-        if self.wiped or not self.personalized:
-            return None
-        r = MeterRecord.unpack(raw)
+    def boot(self) -> None:
+        """Power-up. A wiped part never keeps its tamper key across a cut."""
+        if self.wiped:
+            self._tamper_sk = None
+
+    def _advances(self, r: MeterRecord, kind: int) -> bool:
         seq0, exp0, imp0, tok0 = self.last
-        ok = (
+        return (
             r.meter_id == self.meter_id and r.version == 1 and r.role == self.role
-            and r.class_tag == CLASS_TAG and r.seq > seq0
+            and r.class_tag == CLASS_TAG and r.kind == kind and r.seq > seq0
             and r.e_exp >= exp0 and r.e_imp >= imp0 and r.tokens >= tok0
             and r.tokens * self.q <= r.e_exp
         )
-        if not ok:
+
+    def sign(self, raw: bytes) -> bytes | None:
+        """A1: return the signature, or None for a refusal (EE) or a dead part."""
+        if self.wiped or not self.personalized:
+            return None
+        r = MeterRecord.unpack(raw)
+        if not self._advances(r, KIND_TOKEN):
             return None
         self.last = (r.seq, r.e_exp, r.e_imp, r.tokens)
         assert self._sk is not None
         return crypto.sign(self.alg, self._sk, raw)
+
+    def sign_tamper(self, raw: bytes) -> bytes | None:
+        """A7: one tamper record, only after a wipe and only once."""
+        if not (self.wiped and self.personalized and self._tamper_sk):
+            return None
+        r = MeterRecord.unpack(raw)
+        if not self._advances(r, KIND_TAMPER):
+            return None
+        self.last = (r.seq, r.e_exp, r.e_imp, r.tokens)
+        sig = crypto.sign(self.alg, self._tamper_sk, raw)
+        self._tamper_sk = None
+        return sig
 
 
 @dataclass
@@ -147,6 +178,7 @@ class _Slot:
 class SignedRecord:
     record: bytes
     signature: bytes
+    t: int | None = None   # simulation only: second the frame went out
 
     @property
     def parsed(self) -> MeterRecord:
@@ -161,6 +193,7 @@ class EcMint1:
     signer: SignerOracle = field(default_factory=SignerOracle)
     q: int = Q_WH
     sign_every: int = SIGN_EVERY
+    resend_s: int = RESEND_S
 
     def __post_init__(self) -> None:
         self.records: list[SignedRecord] = []
@@ -175,6 +208,10 @@ class EcMint1:
         self.armed = False
         self.e_exp = self.e_imp = self.tokens = self.credit = self.since = 0
         self.seq = self.gen = 0
+        # The last token record sent since power-up, for the daily re-send.
+        # Not kept in FRAM: after a power cut the next token restarts it.
+        self.last_sent: tuple[int, int, int] | None = None
+        self.idle_s = 0
         rom = self.fram.read(ROM_ADDR, 256)
         mark = self.fram.read(LOCK_ADDR, 4)
         if mark[:2] == b"LK" and int.from_bytes(mark[2:4], "big") == crc16(rom):
@@ -203,7 +240,7 @@ class EcMint1:
             self.gen, self.e_exp, self.e_imp = best.gen, best.e_exp, best.e_imp
             self.tokens, self.credit, self.seq, self.since = (
                 best.tokens, best.credit, best.seq, best.since)
-        self.armed = (rom[0:2] == b"\xA5\x5A" and rom[2] in (ROLE_GEN, ROLE_GRID)
+        self.armed = (rom[0:2] == b"\xA5\x5A" and rom[2] in METER_ROLES
                       and rom[7] != 0)
 
     def _persist(self) -> None:
@@ -215,6 +252,7 @@ class EcMint1:
 
     def power_cycle(self) -> None:
         """Power cut. Anything not yet in FRAM is lost, as on the board."""
+        self.signer.boot()
         self.boot()
 
     @property
@@ -257,21 +295,52 @@ class EcMint1:
         if sign_req:
             self._sign()
 
-    def _sign(self) -> None:
+    def _sign(self, values: tuple[int, int, int] | None = None) -> None:
+        e_exp, e_imp, tokens = values or (self.e_exp, self.e_imp, self.tokens)
         self.seq += 1
-        rec = MeterRecord(self.meter_id, self.role, self.seq, self.e_exp,
-                          self.e_imp, self.tokens, self.cal_crc).pack()
+        self.idle_s = 0
+        rec = MeterRecord(self.meter_id, self.role, self.seq, e_exp, e_imp,
+                          tokens, self.cal_crc).pack()
         self._persist()
         sig = self.signer.sign(rec)
         if sig is None:
             self.refused += 1
+            self.last_sent = None
             return
+        self.last_sent = (e_exp, e_imp, tokens)
         self.records.append(SignedRecord(rec, sig))
+
+    # ---------------- re-send ---------------------------------------------
+    def idle(self, seconds: int) -> None:
+        """Time passes with no token. After ``resend_s`` seconds without a
+        record the die signs the last token record again under a new seq, so
+        a frame lost on the way to the ledger is replaced without anyone
+        asking. The counters in it are the old ones; only seq changes."""
+        total = self.idle_s + int(seconds)
+        while (total >= self.resend_s and self.counting
+               and self.last_sent is not None):
+            total -= self.resend_s
+            self._sign(self.last_sent)
+        self.idle_s = min(total, self.resend_s)
 
     # ---------------- tamper ----------------------------------------------
     def zeroize(self) -> None:
+        """Cover opened under power. The meter key is erased first; then the
+        die asks for one tamper record over the counters as they stand,
+        signed by the tamper key, and stops."""
+        armed = self.counting
         self.signer.wipe()
         self.dead = True
+        if not armed:
+            return
+        self.seq += 1
+        rec = MeterRecord(self.meter_id, self.role, self.seq, self.e_exp,
+                          self.e_imp, self.tokens, self.cal_crc,
+                          kind=KIND_TAMPER).pack()
+        self._persist()
+        sig = self.signer.sign_tamper(rec)
+        if sig is not None:
+            self.records.append(SignedRecord(rec, sig))
 
 
 class EnergyMeter:
@@ -292,6 +361,7 @@ class EnergyMeter:
         self.error = error
         self._exp_j = 0.0
         self._imp_j = 0.0
+        self.clock = 0      # seconds since the meter was installed
 
     @property
     def alg(self) -> str:
@@ -301,14 +371,24 @@ class EnergyMeter:
     def cal_crc(self) -> int:
         return self.mint.cal_crc
 
+    @property
+    def tamper_pk(self) -> bytes:
+        assert self.mint.signer.tamper_pk is not None
+        return self.mint.signer.tamper_pk
+
     def step(self, export_w: float, import_w: float, seconds: float) -> None:
+        self.mint.idle(int(seconds))
         k = 1.0 + self.error
         self._exp_j += max(export_w, 0.0) * seconds * k
         self._imp_j += max(import_w, 0.0) * seconds * k
         n_exp, self._exp_j = divmod(self._exp_j, 3600.0)
         n_imp, self._imp_j = divmod(self._imp_j, 3600.0)
+        before = len(self.mint.records)
         self.mint.pulse_import(int(n_imp))
         self.mint.pulse_export(int(n_exp))
+        self.clock += int(seconds)
+        for r in self.mint.records[before:]:
+            r.t = self.clock
 
     def take_records(self) -> list[SignedRecord]:
         out, self.mint.records = self.mint.records, []

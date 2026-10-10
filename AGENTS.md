@@ -4,7 +4,7 @@ Instructions for AI coding agents (and people) working in this repository. Read 
 
 ## What this repository is
 
-Enerchain is a proposal and reference implementation for an electricity currency. A sealed meter counts active energy in both directions and mints **one token per 1000 Wh (1 kWh) of net grid export**. It signs a cumulative record for every token with ML-DSA-44. A public ledger credits each GEN/GRID meter pair with `min(T_GEN, T_GRID)` less what it already credited.
+Enerchain is a proposal and reference implementation for an electricity currency. A sealed meter counts active energy in both directions and mints **one token per 1000 Wh (1 kWh) of net grid export**. It signs a cumulative record for every token with ML-DSA-44. A public ledger credits each GEN/GRID meter pair with `min(T_GEN, T_GRID)` less what it already credited. An optional LOAD meter mints nothing; it lets the ledger check GEN = GRID + LOAD.
 
 The repository has four parts that must agree with each other:
 
@@ -58,10 +58,11 @@ Each prints a `PASS` line or exits non-zero. The full pytest run takes about a m
 
 ## Invariants: do not break these
 
-- **The schedule.** `q = 1000` Wh per token, `SIGN_EVERY = 1` (a signed record per token). `credit = e_exp − e_imp − q·tokens`; tokens follow the high-water mark of net export, so `tokens = ⌊max(e_exp − e_imp) / q⌋`. A record is built when its token mints, so in every record `e_exp − e_imp = 1000 · tokens` exactly. Any example record in a document must satisfy that.
+- **The schedule.** `q = 1000` Wh per token, `SIGN_EVERY = 1` (a signed record per token). `credit = e_exp − e_imp − q·tokens`; tokens follow the high-water mark of net export, so `tokens = ⌊max(e_exp − e_imp) / q⌋`. A record is built when its token mints, so in every token record `e_exp − e_imp = 1000 · tokens` exactly; the daily re-send repeats the last token record's counters under a new seq, so it holds there too. Any example token record in a document must satisfy that. The one tamper record a meter signs (kind 1) carries the live counters and mints nothing.
 - **Four implementations of one rule.** The schedule lives in `hardware/asic/rtl/ec_mint1_schedule.v`, `enerchain/meter.py`, `tools/check_schedule.py` and `firmware/qs7001/sign_oracle.c` (the rollback and `tokens·q ≤ e_exp` guard). Change one and you change all, then run `tools/check_rtl.py`.
-- **The record.** 32 bytes, big-endian, layout in [hardware/asic/spec.md](hardware/asic/spec.md) and `enerchain/record.py`. Frame = `EC 01` + record + 2420-byte ML-DSA-44 signature = 2454 bytes.
-- **The issuance rule.** The ledger accepts a record only if the signature verifies under the certified key, the calibration CRC matches, `seq` increases, and no counter decreases. It credits `min(T_GEN − base_GEN, T_GRID − base_GRID)` minus what it already credited. Balances are in watt-hours; 1 token = 1000 Wh.
+- **The record.** 32 bytes, big-endian, layout in [hardware/asic/spec.md](hardware/asic/spec.md) and `enerchain/record.py`. Byte 30 is the kind (0 token, signed by the meter key; 1 tamper, signed by the tamper key), byte 31 is zero. Roles are 1 GEN, 2 GRID, 3 LOAD. Frame = `EC 01` + record + 2420-byte ML-DSA-44 signature = 2454 bytes.
+- **The issuance rule.** The ledger accepts a record only if the signature verifies under the certified key, the calibration CRC matches, `seq` increases, no counter decreases, and the meter is not revoked past the revocation's effective seq or past its own tamper record. It credits `min(T_GEN, T_GRID + attested)` minus what it already credited, where each side sums `tokens − base` over the meters that have held it. `attested` moves only by a k-of-n attestation, capped by the escrow. Balances are in watt-hours; 1 token = 1000 Wh.
+- **The supplier's protections** ([docs/grid-operator.md](docs/grid-operator.md)). Do not weaken these without a CHANGELOG row: revocation has a listed reason, an evidence hash, an effective seq, and a contestable notice period below `k_urgent`; genesis refuses a sector holding k certifier keys; a pair request fixes starting counts; GEN tokens counted during a GRID outage are escrowed, not dropped; the balance flag never moves credit by itself.
 - **No host write port.** Nothing outside EC-MINT1 may set a counter or choose what the QS7001 signs. The radio is transmit-only. Do not add a path from the radio, or a second SPI master, to the signer or the F-RAM.
 - **Ground is Line.** On EC-SEAL1 logic ground is the grid side of the shunt; the divider runs from Neutral. Read [CIRCUITS.md](hardware/fab/ec-seal1/CIRCUITS.md) before touching the analog front end or the supply.
 
@@ -84,7 +85,7 @@ To change a part, edit `tools/gen_board.py` and regenerate. If a value changes, 
 
 ## Versions and changelog
 
-- Software releases are `vX.Y.Z` (currently v0.0.1, set in `pyproject.toml` and `enerchain/__init__.py`). Documentation editions are `doc-N.M` (currently doc-1.3) and are never git tags.
+- Software releases are `vX.Y.Z` (currently v0.0.1, set in `pyproject.toml` and `enerchain/__init__.py`). Documentation editions are `doc-N.M` (currently doc-1.4) and are never git tags.
 - A change to the claim, the math, the schedule or the hardware adds a row to [CHANGELOG.md](CHANGELOG.md). Update the `Edition:` line at the top of each document you change.
 - Electrical findings go in [docs/electrical-review.md](docs/electrical-review.md) with the calculation, in the C-/M-/Minor numbering.
 

@@ -5,7 +5,9 @@
 // QS7001 signing oracle, as specified in firmware/qs7001/sign_oracle.c.
 // SPI mode 0 slave. A1 + 32 bytes + CRC-8 -> BUSY poll bytes of 00, then
 // 5A and SIG_BYTES signature bytes, or EE if the record does not advance
-// the last signed sequence number. 5C 5C erases the key for good.
+// the last signed sequence number or is not a token record (byte 30 = 0).
+// 5C 5C erases the meter key for good. After that, and only once, A7 and a
+// tamper record (byte 30 = 1) are signed with the tamper key.
 // The "signature" is a deterministic stand-in: sig[i] = m[i%32] ^ i ^ A5.
 module qs7001_model #(
     parameter integer SIG_BYTES = 40,
@@ -21,8 +23,8 @@ module qs7001_model #(
     reg [7:0] rx_sh, out_sh, crc;
     integer bitcnt, n, k, state;
     integer last_seq;
-    integer signs, refusals, wipes;
-    reg wiped, refuse;
+    integer signs, refusals, wipes, tamper_signs;
+    reg wiped, refuse, tamper_used, is_tamper;
     reg [31:0] rseq;
     localparam CMD = 0, MSG = 1, CRC = 2, RESP = 3, WIPE1 = 4, IGN = 5;
 
@@ -51,12 +53,13 @@ module qs7001_model #(
     initial begin
         miso = 1'b0; bitcnt = 0; state = CMD; out_sh = 8'h00; rx_sh = 8'h00;
         last_seq = 0; signs = 0; refusals = 0; wipes = 0; wiped = 1'b0; refuse = 1'b0;
+        tamper_signs = 0; tamper_used = 1'b0; is_tamper = 1'b0;
         n = 0; k = 0; crc = 8'h00;
     end
 
     always @(negedge cs_n) begin
         bitcnt = 0;
-        state = wiped ? IGN : CMD;
+        state = (wiped && tamper_used) ? IGN : CMD;
         out_sh = 8'h00;
         miso = 1'b0;
     end
@@ -71,8 +74,14 @@ module qs7001_model #(
             bitcnt = 0;
             case (state)
             CMD: begin
-                if (rx_sh == 8'hA1) begin state = MSG; n = 0; crc = 8'h00; end
-                else if (rx_sh == 8'h5C) state = WIPE1;
+                if (rx_sh == 8'hA1 && !wiped) begin
+                    state = MSG; n = 0; crc = 8'h00; is_tamper = 1'b0;
+                end else if (rx_sh == 8'hA7 && wiped && !tamper_used) begin
+                    state = MSG; n = 0; crc = 8'h00; is_tamper = 1'b1;
+                end else if (rx_sh == 8'h5C && !wiped)
+                    state = WIPE1;
+                else
+                    state = IGN;
                 out_sh = 8'h00;
             end
             MSG: begin
@@ -85,9 +94,11 @@ module qs7001_model #(
                     state = IGN; out_sh = 8'h00;
                 end else begin
                     rseq = {msg[6], msg[7], msg[8], msg[9]};
-                    refuse = (rseq <= last_seq);
+                    refuse = (rseq <= last_seq) || (msg[30] != (is_tamper ? 8'h01 : 8'h00));
                     if (refuse) refusals = refusals + 1;
-                    else begin last_seq = rseq; signs = signs + 1; end
+                    else if (is_tamper) begin
+                        last_seq = rseq; tamper_signs = tamper_signs + 1; tamper_used = 1'b1;
+                    end else begin last_seq = rseq; signs = signs + 1; end
                     state = RESP; k = 0;
                     out_sh = resp(k); k = k + 1;
                 end

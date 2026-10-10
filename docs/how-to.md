@@ -1,6 +1,6 @@
 # How to read, set up, and build
 
-Release: v0.0.1 (doc-1.2, 2026-10-09). Nothing in the tree has been stuffed or taped out. The software runs; the hardware simulates.
+Release: v0.0.1 (doc-1.4, 2026-10-10). Nothing in the tree has been stuffed or taped out. The software runs; the hardware simulates.
 
 ## What this repository is
 
@@ -8,7 +8,7 @@ Enerchain is an electricity currency. Coins are created when sealed meters measu
 
 The buildable form is four pieces, decided in [SOLUTION.md](../SOLUTION.md):
 
-1. **EC-SEAL1**, the meter board, revision B. Order two per site. One sits at the generator terminals (GEN), one at the point of connection to the grid (GRID). The ledger mints the smaller of the two boards' token counts.
+1. **EC-SEAL1**, the meter board, revision B. Order two per site. One sits at the generator terminals (GEN), one at the point of connection to the grid (GRID). The ledger mints the smaller of the two boards' token counts. A third board on the site's own load (LOAD) is optional; it mints nothing and lets the ledger check that no energy goes missing between GEN and GRID.
 2. **EC-MINT1**, a small standard-cell die. It counts export and import watt-hour pulses, keeps its counters in F-RAM through power cuts, and is the only SPI master the signer will ever see. One token is 1000 net-export pulses, which is 1 kWh at the meter’s 1000 impulses/kWh setting.
 3. **QS7001**, a catalog secure element. ML-DSA runs inside it. The private key is not in EC-MINT1 and not in any file in this repository.
 4. **The `enerchain` package**: the ledger, the wallet, a development network, and a reference model of the meter.
@@ -26,7 +26,7 @@ Do not build from [hardware/fab/BOM.csv](../hardware/fab/BOM.csv) (doc-0.9) or f
 7. [Ledger nonrepudiation](ledger-nonrepudiation.md) — that signature on a public ledger.
 8. [Meter burden](meter-burden.md) — the mint path stays inside a present-day meter’s draw.
 9. [Electrical review](electrical-review.md) — what was wrong with the doc-1.1 board, with calculations.
-10. [Threat model](threat-model.md) and [open items](open-items.md) — what is stopped, what is not, and what is still assumed.
+10. [Threat model](threat-model.md), [a dishonest grid operator](grid-operator.md) and [open items](open-items.md) — what is stopped, what is not, and what is still assumed.
 11. [Software](software.md) — the ledger, wallet and devnet.
 12. [EC-SEAL1 manufacturer file](../hardware/fab/ec-seal1/MANUFACTURER.md) and [circuits](../hardware/fab/ec-seal1/CIRCUITS.md).
 13. [EC-MINT1](../hardware/asic/README.md) — chip handoff. Verilog and a package drawing, not GDSII.
@@ -73,6 +73,7 @@ PASS schematics: values match CIRCUITS.md, connections match netlist.txt
 ```sh
 enerchain demo                       # a two-validator devnet, a GEN/GRID pair, three simulated days
 enerchain demo --battery-loop-w 3000 # the same, with a nightly grid->battery->grid loop: same mint
+enerchain demo --siphon-w 300        # a LOAD meter and a 300 W tap before the GRID meter: flag raised
 enerchain devnet init ./dn           # a persistent devnet
 enerchain wallet new ./me.json
 enerchain devnet show ./dn
@@ -96,7 +97,7 @@ Send the chip house [hardware/asic/](../hardware/asic/), not a request to “add
 
 ## Personalize the signer
 
-[firmware/qs7001/sign_oracle.c](../firmware/qs7001/sign_oracle.c) is the reference image, not a host program. At the factory, before the cover is sealed, the vendor provisioning flow loads the image and calls `sign_oracle_personalize(meter_id, role)` once. That generates the key on the part. Read out the public key, publish it with the image hash, and submit a meter certificate for k-of-n approval. The image's only SPI commands are `A1` (sign a record) and `5C 5C` (erase). Mapping the `qs_*` calls to the vendor SDK is open item O-3.
+[firmware/qs7001/sign_oracle.c](../firmware/qs7001/sign_oracle.c) is the reference image, not a host program. At the factory, before the cover is sealed, the vendor provisioning flow loads the image and calls `sign_oracle_personalize(meter_id, role)` once, with role 1 (GEN), 2 (GRID) or 3 (LOAD). That generates two keys on the part: the meter key and the tamper key. Read out both public keys, publish them with the image hash, and submit a meter certificate for k-of-n approval. The image's only SPI commands are `A1` (sign a token record with the meter key), `5C 5C` (erase the meter key) and, once and only after `5C 5C`, `A7` (sign the tamper record with the tamper key, then erase it). Mapping the `qs_*` calls to the vendor SDK is open item O-3.
 
 ## Bring up one pair
 
@@ -108,8 +109,11 @@ Do these in order. The pass conditions are the numbered steps in [TEST.md](../ha
 4. Shift the calibration image. `CAL_LOCKED` rises and stays risen across power cycles.
 5. Divider, shunt, and the LED1/LED2 direction check through the isolation transformer.
 6. 1000 export pulses, one UART frame with tokens 1; each further 1000 pulses, one more frame; import cancels export; a power cut loses nothing.
-7. The other board of the pair, its own key. Submit both records to a devnet with `enerchain`; the pair mints the smaller count.
-8. Spring released under power: `5C 5C` on the signer MOSI, the signer rail off, no further frames.
+7. The other board of the pair, its own key. Submit both records to a devnet with `enerchain` (`enerchain frame submit DIR FRAME_HEX`); the pair mints the smaller count.
+8. Spring released under power: `5C 5C` on the signer MOSI, then one tamper frame that verifies under the tamper key, the signer rail off after a few seconds, no further frames.
+9. Optional LOAD board: role 3, H2 to the site bus, H1 to the load. Certify it and name it in the pair certificate; `enerchain pair report` then shows the GEN = GRID + LOAD balance.
+
+Install the GRID board at the ownership boundary, on the supplier's side, in the supplier's sealed enclosure, with its terminal shroud sealed. Give the certifiers the single-line diagram and installation record; its SHA-384 goes in the pair certificate as `site_hash`. File the pair request from the beneficiary wallet (`enerchain pair request DIR WALLET GEN_ID GRID_ID --load LOAD_ID`) before the certificate, so the pair counts from that moment. [grid-operator.md](grid-operator.md) says why.
 
 ## Versions
 

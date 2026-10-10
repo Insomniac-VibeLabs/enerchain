@@ -1,6 +1,6 @@
 # EC-MINT1 chip handoff
 
-Edition: v0.0.1 (doc-1.3). This is the package an ASIC design house accepts before physical design. It is not GDSII. A foundry will not mask it until place-and-route on that foundry's process design kit.
+Edition: v0.0.1 (doc-1.4). This is the package an ASIC design house accepts before physical design. It is not GDSII. A foundry will not mask it until place-and-route on that foundry's process design kit.
 
 ## Function
 
@@ -19,7 +19,7 @@ The doc-0.8 files `rtl/keccak_round.v` and `rtl/ntt_butterfly.v` are not in this
 ## What was run
 
 - `tb_schedule.v`: 999 pulses mint nothing, 1000 mint one, 400 + 600 mint one, 500 import then 1500 export mint one, every token raises exactly one record request.
-- `tb_ec_mint1.v`, against behavioral models of the QS7001 oracle, the FRAM and the STPM32 configuration port: blank FRAM waits for provisioning and does not count; provisioning locks the image into FRAM; the STPM32 is put in SPI mode and the transcript is replayed; export mints, import cancels; a power cut between records keeps counters and sequence; a power cut in the middle of a FRAM write falls back to the older slot; a refused sequence produces no frame and the next one is accepted; ZEROIZE sends `5C 5C`, holds the signer in reset, and stops counting.
+- `tb_ec_mint1.v`, against behavioral models of the QS7001 oracle, the FRAM and the STPM32 configuration port: blank FRAM waits for provisioning and does not count; provisioning locks the image into FRAM; the STPM32 is put in SPI mode and the transcript is replayed; export mints, import cancels; a power cut between records keeps counters and sequence; a power cut in the middle of a FRAM write falls back to the older slot; a refused sequence produces no frame and the next one is accepted; after an idle spell the last record is re-sent under the next seq with the same counters; ZEROIZE sends `5C 5C`, then `A7` and one tamper record (kind 1, the live counters) signed with the tamper key, holds the signer in reset, and stops counting.
 - `tools/check_rtl.py` replays the same events through the Python reference model (`enerchain/meter.py`) and requires every signed record to match byte for byte.
 - `yosys synth -top ec_mint1` with `check -assert`: no problems.
 
